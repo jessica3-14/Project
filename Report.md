@@ -32,10 +32,10 @@ function bucketsort(data,n_buckets)
 
 ### QuickSort
 create function that takes in an array, two integers, low and high
-	in function
+```
+	function
 		set integer as pivot, equal to element at position high in array
 		set integer as k, equal to low - 1
-		```
 		for each element from low to high
 			if element at array is less than pivot
 				k increases
@@ -44,7 +44,7 @@ create function that takes in an array, two integers, low and high
 		end for
 		swap element at k+1 and element at high
 		return k+1
-	```
+```
 
 create second function takes in array , two integers, low and hig
 	in function
