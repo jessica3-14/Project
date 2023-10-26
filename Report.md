@@ -88,22 +88,16 @@ we should have m-1 global splitters, now use these splitters for bucket sort
 perform bucket sort given m buckets and the bucket partitions being the global splitters`
 
 ### Bubble Sort
-`function bubbleSort(list: array of items)
-	loop = list.count;
-	for i = 0 to loop-1 do:
-	    boolean swapped = false;
-	    for j = 0 to loop-1 do:
-	        if list at index j > list at index j+1 then
-	        	swap(list at index j, list at index j+1)
-	            swapped = true
-	         end if statement
-	    end for loop
-	    if (not swapped) then
-	        break
-	    end if statement
-	end for loop
-	return list
-end function`
+`create function that takes in an array of items
+loop = list.count;
+for i = 0 to loop-1
+	boolean swapped = false
+	for j = 0 to loop-1
+	    if list at index j > list at index j+1
+	        swap(list at index j, list at index j+1)
+	        swapped = true
+	    if (not swapped) then break
+	return list`
 
 ### 3. Team communication
-'Our team will mainly be using discord as our means of communication due to the fact that it is easy to use and if we ever need to voice call or meet up remotely, we do not have to set up a zoom meeting.'
+Our team will mainly be using discord as our means of communication due to the fact that it is easy to use and if we ever need to voice call or meet up remotely, we do not have to set up a zoom meeting.
