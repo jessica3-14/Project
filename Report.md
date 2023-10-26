@@ -46,15 +46,15 @@ create function that takes in an array, two integers, low and high
 		return k+1
 ```
 
-create second function takes in array , two integers, low and hig
+create second function takes in array , two integers, low and high
+```
 	in function
-	```
 		if low is less than high
 			set integer as p, call first function with values given
 			recursive call with array, low and p-1
 			recursive call with array, p+1, and high
 		end if
-	```
+```
 
 in main function call second function with array, 0 and n-1, n being the size of the array.
 
