@@ -55,6 +55,7 @@ in main function call second function with array, 0 and n-1, n being the size of
 
 ### Bubble Sort
 create function that takes in an array of items
+```
 loop = list.count
 for i = 0 to loop-1
 	boolean swapped = false
@@ -64,6 +65,7 @@ for i = 0 to loop-1
 	        swapped = true
 	    if (not swapped) then break
 	return list
+```
 
 ### Sample Sort
 With unsorted array of size n
