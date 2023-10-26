@@ -53,6 +53,17 @@ create second function takes in array , two integers, low and hig
 
 in main function call second function with array, 0 and n-1, n being the size of the array.
 
+### Bubble Sort
+create function that takes in an array of items
+loop = list.count
+for i = 0 to loop-1
+	boolean swapped = false
+	for j = 0 to loop-1
+	    if list at index j > list at index j+1
+	        swap(list at index j, list at index j+1)
+	        swapped = true
+	    if (not swapped) then break
+	return list
 
 ### Sample Sort
 With unsorted array of size n
@@ -86,18 +97,6 @@ for i in range of 1 and piv_num
 
 we should have m-1 global splitters, now use these splitters for bucket sort
 perform bucket sort given m buckets and the bucket partitions being the global splitters
-
-### Bubble Sort
-create function that takes in an array of items
-loop = list.count
-for i = 0 to loop-1
-	boolean swapped = false
-	for j = 0 to loop-1
-	    if list at index j > list at index j+1
-	        swap(list at index j, list at index j+1)
-	        swapped = true
-	    if (not swapped) then break
-	return list
 
 ### 3. Team communication
 Our team will mainly be using discord as our means of communication due to the fact that it is easy to use and if we ever need to voice call or meet up remotely, we do not have to set up a zoom meeting.
