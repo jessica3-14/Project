@@ -51,7 +51,7 @@ create second function takes in array , two integers, low and hig
 			recursive call with array, p+1, and high
 		end if
 `
-in main function call second function with array, 0 and n-1, n being the size of the array.`
+in main function call second function with array, 0 and n-1, n being the size of the array.
 
 
 ### Sample Sort
@@ -82,10 +82,10 @@ sort sample_selection
 
 mod_number= ceil (number of elements in sample_selection/ (piv_num +1))
 for i in range of 1 and piv_num
-    append sample_selection[ i mod_number] to global splitters
+    append sample_selection[ i mod_number] to global splitters`
 
 we should have m-1 global splitters, now use these splitters for bucket sort
-perform bucket sort given m buckets and the bucket partitions being the global splitters`
+perform bucket sort given m buckets and the bucket partitions being the global splitters
 
 ### Bubble Sort
 `create function that takes in an array of items
