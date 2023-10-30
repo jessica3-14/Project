@@ -1,0 +1,8 @@
+core.*
+output.*
+*.cali
+CMakeFiles
+Makefile
+cmake_install.cmake
+gen_data
+CMakeCache.txt
