@@ -6,8 +6,8 @@ find_package(adiak REQUIRED)
 find_package(OpenMP REQUIRED)
 set (CMAKE_CXX_FLAGS "-O -fopenmp")
 
-add_executable(quicksort quicksort.cpp)
-target_link_libraries(quicksort PRIVATE caliper)
+add_executable(quicksort.out quicksort.cpp)
+target_link_libraries(quicksort.out PRIVATE caliper)
 
 message(STATUS "Caliper includes : ${caliper_INCLUDE_DIR}")
 message(STATUS "Adiak includes : ${adiak_INCLUDE_DIRS}")
