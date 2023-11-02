@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
     double* data_arr = new double[n_local_vals];
     double* final_arr = NULL;
 
-    std::uniform_real_distribution<double> unif(DBL_MIN, DBL_MAX);
+    std::uniform_real_distribution<double> unif(0, 100000);
     std::default_random_engine re;
     //printf("initialized random engine\n");
     for (int i = 0; i<n_local_vals; i++){
