@@ -4,7 +4,7 @@ find_package(MPI REQUIRED)
 find_package(caliper REQUIRED)
 find_package(adiak REQUIRED)
 
-add_executable(gen_data.out gen_data.cpp)
+add_executable(bucket.out bucket.cpp)
 
 message(STATUS "MPI includes : ${MPI_INCLUDE_PATH}")
 message(STATUS "Caliper includes : ${caliper_INCLUDE_DIR}")
@@ -13,5 +13,5 @@ include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 include_directories(${caliper_INCLUDE_DIR})
 include_directories(${adiak_INCLUDE_DIRS})
 
-target_link_libraries(gen_data.out PRIVATE MPI::MPI_CXX)
-target_link_libraries(gen_data.out PRIVATE caliper)
+target_link_libraries(bucket.out PRIVATE MPI::MPI_CXX)
+target_link_libraries(bucket.out PRIVATE caliper)
