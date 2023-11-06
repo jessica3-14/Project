@@ -71,7 +71,7 @@ void check_sort(double* data, int data_size, int* retval){
     int local_bool=0;
     int n_local_vals = data_size/world_size;
     for (int i = n_local_vals*world_rank; i < n_local_vals*(world_rank+1); i++){
-        if(i=data_size){break;}
+        if(i==data_size){break;}
         if(data[i] > data[i+1]){ 
             local_bool=1;
         }
