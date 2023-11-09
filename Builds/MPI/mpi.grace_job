@@ -27,3 +27,4 @@ CALI_CONFIG="spot(output=p${processes}.cali, \
     time.variance)" \
 mpirun -np $processes ./bubblesort.out
 mpirun -np $processes ./bucket.out $data_size $mode
+mpirun -np $processes ./samplesort.out
