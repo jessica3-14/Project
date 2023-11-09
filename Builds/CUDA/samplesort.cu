@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <caliper/cali.h>
-#include <adiak.hpp>
+//#include <adiak.hpp>
 #include <cuda.h>
 #include <cuda_runtime.h>
 
@@ -47,7 +47,7 @@ bool check_sorted(double *arr, int arr_len)
    return true;
 }
 
-__global__ void sample_sort_step(float *dev_values)
+__global__ void sample_sort_step(float *data)
 {
   unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
   unsigned int n =  blockDim.x;
@@ -118,18 +118,18 @@ int main(int argc, char *argv[])
     const char* inputType = "Random";
     const char* group_number = "12";
     const char* implementation_source = "AI";
-    int num_procs = "";
+    int num_procs = THREADS;
     int num_threads = THREADS;
     int num_blocks = BLOCKS;
 
 
-    adiak::init(NULL);
+/*    adiak::init(NULL);
     adiak::launchdate();    // launch date of the job
     adiak::libraries();     // Libraries used
     adiak::cmdline();       // Command line used to launch the job
     adiak::clustername();   // Name of the cluster
 
-
+*/
   CALI_MARK_BEGIN(entire_computation_region);
 
   start = clock();
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 
 
 
-  if (check_sorted(values, NUM_VALS))
+/*  if (check_sorted(values, NUM_VALS))
          printf("Sorted with Sample Sort\n");
       else
         printf("Unsuccessful Sort\n");
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
     adiak::value("group_num", group_number); // The number of your group (integer, e.g., 1, 10)
     adiak::value("implementation_source", implementation_source) // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
 
-
+*/
 
 
 
