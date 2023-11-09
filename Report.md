@@ -301,11 +301,11 @@ end function
 Required Code Regions: data_init, comm, comp, comm_large, comp_large, comm_small
 comp_small, correctness_check
 
-CUDA Implementation:
+MPI Implementation:
 
 For sample sort, the first MPI gather gathers all the splitters from the processors and combines them. Then, MPI all to all will send data from all processes to the communicators, the buckets are sorted locally, and then eventually are gathered together to form a sorted array
 
-CUDA Explanation:
+CUDA Implementation:
 
 In the cuda kernel, the computation for sorting each block/bucket is performed. After each bucket is sorted, we obtain the splitters from them with a cuda memcpy, and then each kernel places elements into their respective buckets. Another memcpy is used to copy the sorted values from the GPU to the main process into one array.
 
