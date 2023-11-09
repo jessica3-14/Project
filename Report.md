@@ -152,6 +152,58 @@ function main()
 
 ### Quicksort
 
+CUDA Implementation (Pseudocode):
+```
+int THREADS;
+int BLOCKS;
+int NUM_VALS;
+
+const char* bitonic_sort_step_region = "bitonic_sort_step";
+const char* cudaMemcpy_host_to_device = "cudaMemcpy_host_to_device";
+const char* cudaMemcpy_device_to_host = "cudaMemcpy_device_to_host";
+
+function float random_float() {
+  return (float)rand() / (float)RAND_MAX;
+}
+
+function void array_fill(float* arr, int length) {
+  srand(time(NULL));
+  for i = 0 to length - 1 do
+    arr[i] = random_float();
+  end for
+}
+
+function void quick_sort_step(float* dev_values, int l, int h) {
+  Launch a CUDA kernel to perform a step of the quicksort on dev_values within the range [l, h].
+  // This part contains GPU-specific CUDA code.
+}
+
+function void quick_sort(float* values, int low, int high) {
+  Allocate GPU memory for dev_values.
+  Copy values from the CPU to the GPU (dev_values).
+  Perform the quicksort step on dev_values using CUDA.
+  Copy the sorted values back from the GPU to the CPU (values).
+  Free the GPU memory.
+}
+
+function int main(int argc, char* argv[]) {
+  Parse command line arguments to set THREADS and NUM_VALS.
+  Calculate BLOCKS based on NUM_VALS and THREADS.
+
+  Initialize the Caliper configuration manager.
+
+  Allocate memory for an array of float values.
+
+  Record the start time.
+
+  Perform the quicksort on the array of values.
+
+  Record the stop time.
+
+  Flush the Caliper configuration manager to capture profiling information.
+}
+```
+
 ### Bubble Sort
 Required Code Regions: data_init, comm, comp, comm_large, comp_large, comm_small
 comp_small, correctness_check
