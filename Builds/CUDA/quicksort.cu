@@ -3,7 +3,7 @@
 #include <time.h>
 #include <caliper/cali.h>
 #include <caliper/cali-manager.h>
-#include <adiak.hpp>
+//#include <adiak.hpp>
 
 int THREADS;
 int BLOCKS;
@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
   quick_sort(values, 0, NUM_VALS - 1);
   stop = clock();
 
-  print_elapsed(start, stop);
+ // print_elapsed(start, stop);
 
   mgr.stop();
   mgr.flush();

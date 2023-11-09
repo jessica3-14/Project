@@ -8,7 +8,7 @@ module load GCCcore/7.3.0
 module load CMake/3.12.1
 
 cmake \
-    -Dcaliper_DIR=~/CALI \
+    -Dcaliper_DIR=/home/jessicavwlms/CALI/share/cmake/caliper \
     .
 
 make
