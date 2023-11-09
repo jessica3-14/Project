@@ -18,11 +18,12 @@
 #
 
 processes=$1
-
+data_size=$2
+mode=$3
 module load intel/2020b       # load Intel software stack
 module load CMake/3.12.1
 
 CALI_CONFIG="spot(output=p${processes}.cali, \
     time.variance)" \
 mpirun -np $processes ./bubblesort.out
-mpirun -np $processes ./bucket.out  
+mpirun -np $processes ./bucket.out $data_size $mode
