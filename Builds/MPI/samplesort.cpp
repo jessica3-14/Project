@@ -54,12 +54,12 @@ int main(int argc, char** argv){
     int local_N = N / size;  // Number of elements per process
     double* local_data = (double*)malloc(local_N * sizeof(double));
     // now generate random values for local data for sorting
-    //CALI_MARK_BEGIN(data_init);
+    CALI_MARK_BEGIN(data_init);
 
     for (int i = 0; i < local_N; i++) {
     local_data[i] = (double)rand() / RAND_MAX; //populating processes with random values
     }
-   //CALI_MARK_END(data_init);
+   CALI_MARK_END(data_init);
 
     const char* algorithm = "SampleSort";
     const char* programmingModel = "MPI";
@@ -79,11 +79,11 @@ int main(int argc, char** argv){
     adiak::cmdline();       // Command line used to launch the job
     adiak::clustername();   // Name of the cluster
 
+    cali::ConfigManager mgr;
+    mgr.start();
 
 
-
-
-    //CALI_MARK_BEGIN(comp_large);
+    CALI_MARK_BEGIN(comp_large);
     qsort(local_data, local_N, sizeof(double), compare_dbls);   // Each process sorts its data locally
     double* splitters = (double*)malloc(size * sizeof(double));
     int idx = local_N / 2; 
@@ -102,14 +102,14 @@ int main(int argc, char** argv){
     // Partition based on the splitters
 
 
-    //CALI_MARK_END(comp_large);
+    CALI_MARK_END(comp_large);
 
 
     int* sendcounts = (int*)malloc(size * sizeof(int));
     int* displs = (int*)malloc(size * sizeof(int));
     int i, j = 0;
 
-    //CALI_MARK_BEGIN(comp_small);
+    CALI_MARK_BEGIN(comp_small);
     for (i = 0; i < size - 1; ++i) {
         while (j < local_N && local_data[j] < splitters[i]) ++j;
         sendcounts[i] = j;
@@ -117,34 +117,34 @@ int main(int argc, char** argv){
     }
     sendcounts[size - 1] = local_N - j;
     displs[size - 1] = j;
-    //CALI_MARK_END(comp_small);
+    CALI_MARK_END(comp_small);
 
-    //CALI_MARK_BEGIN(comm_small);
+    CALI_MARK_BEGIN(comm_small);
     int* recvcounts = (int*)malloc(size * sizeof(int));
     int* recvdispls = (int*)malloc(size * sizeof(int));
     MPI_Alltoall(sendcounts, 1, MPI_INT, recvcounts, 1, MPI_INT, MPI_COMM_WORLD);
     MPI_Alltoall(displs, 1, MPI_INT, recvdispls, 1, MPI_INT, MPI_COMM_WORLD);
     double* new_data = (double*)malloc(N * sizeof(double)); // exchange data given partitions
-    //CALI_MARK_END(comm_small);
+    CALI_MARK_END(comm_small);
 
 
-    //CALI_MARK_BEGIN(comm_large);
+    CALI_MARK_BEGIN(comm_large);
     MPI_Alltoallv(local_data, sendcounts, displs, MPI_DOUBLE, new_data, recvcounts, recvdispls, MPI_DOUBLE, MPI_COMM_WORLD);
-    //CALI_MARK_END(comm_large);
+    CALI_MARK_END(comm_large);
 
 
-    //CALI_MARK_BEGIN(comp_large);
+    CALI_MARK_BEGIN(comp_large);
     qsort(new_data, N, sizeof(double), compare_dbls);   //Sort received data
-    //CALI_MARK_END(comp_large);
+    CALI_MARK_END(comp_large);
 
     if (rank == 0)
    {
-      //CALI_MARK_BEGIN(correctness_check);
+      CALI_MARK_BEGIN(correctness_check);
       if (check_sorted(new_data, N))
          printf("Sorted with Sample Sort\n");
       else
         printf("Unsuccessful Sort\n");
-      //CALI_MARK_END(correctness_check);
+      CALI_MARK_END(correctness_check);
 
     adiak::value("Algorithm", algorithm); // The name of the algorithm you are using (e.g., "MergeSort", "BitonicSort")
     adiak::value("ProgrammingModel", programmingModel); // e.g., "MPI", "CUDA", "MPIwithCUDA"
@@ -160,6 +160,7 @@ int main(int argc, char** argv){
 
    }
 
-
+    mgr.stop();
+    mgr.flush();
     MPI_Finalize();
 }

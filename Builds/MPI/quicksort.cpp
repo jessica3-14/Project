@@ -13,10 +13,10 @@ int quicksort_step(double* arr, int left, int right){
     double piv = arr[right];
     int i = left - 1;
     
-    for(int k = left ; k < right;k++){
-        if (arr[k] <= pivot){
+    for(int j = left ; j < right;j++){
+        if (arr[j] <= piv){
             i++;
-            std::swap(arr[k], arr[k]);
+            std::swap(arr[i], arr[j]);
         }
     }
     
@@ -26,7 +26,7 @@ int quicksort_step(double* arr, int left, int right){
 
 void quicksort(double* arr, int left, int right){
     if (left < right){
-        int piv = partition(arr, left,right);
+        int piv = quicksort_step(arr, left,right);
         quicksort(arr,left,piv-1);
         quicksort(arr,piv+1, right);
     }
