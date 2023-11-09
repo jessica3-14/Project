@@ -11,25 +11,50 @@
 ## 2. _due 10/25_ Project topic
 Sorting algorithms
 
-## 2. _due 10/25_ Brief project description (what algorithms will you be comparing and on what architectures)
+## 2a. _due 10/25_ Brief project description (what algorithms will you be comparing and on what architectures)
 
 We will compare each of the four algorithms (Bucket Sort, QuickSort, Sample Sort, Bubble Sort) by implementing in MPI as well as Cuda. We plan to use reverse sorted, random, and 10% noisy data and compare each of the implementations across those as well.
 
+## 2b. Psuedocode
 ### Bucket Sort
+#### CUDA Implementation
 ```
-function bucketsort(data,n_buckets)
-	create n_buckets empty arrays
-	loop over data:
-		add data[i] to correct bucket
+function bucketsort(data,sizes,n_buckets)
+	compute thread index
+	add data of index to correct bucket
+    increment bucket size
+    
 
-	for each bucket:
-		bitonicsort(bucket)
+function main()
 
+    generateData(data) //on host
+    
+    copy data to device
 
-	for each bucket:
-		copy bucket contents to answer array
+    bucketSort(data,sizes,n_buckets) //on kernel
+
+    for each bucket:
+	    bitonicsort(bucket) //on kernel
+
+    for each bucket:
+	    copy bucket contents to answer array on host
 ```
+#### MPI Implementation
+```
+function main()
+    generateData(data)
+    
+    loop over local data
+        add data to correct bucket
+        increment bucket size
+    
+    add then broadcast bucket sizes
+    
+    sort local bucket
+    
+    gather all buckets together
 
+```
 ### QuickSort
 create function that takes in an array, two integers, low and high
 ```
@@ -107,6 +132,7 @@ for i in range of 1 and piv_num
 ```
 we should have m-1 global splitters, now use these splitters for bucket sort
 perform bucket sort given m buckets and the bucket partitions being the global splitters
+
 
 ### 3. Team communication
 Our team will mainly be using discord as our means of communication due to the fact that it is easy to use and if we ever need to voice call or meet up remotely, we do not have to set up a zoom meeting.
