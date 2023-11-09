@@ -137,10 +137,22 @@ int main(int argc, char** argv){
     qsort(new_data, N, sizeof(double), compare_dbls);   //Sort received data
     CALI_MARK_END(comp_large);
 
+
+    
     if (rank == 0)
    {
+    double* sorted_array = (double*)malloc(N * sizeof(double));
+    int* displacements = (int*)malloc(size * sizeof(int));
+    displacements[0] = 0;
+    for (int i = 1; i < size; ++i) {
+        displacements[i] = displacements[i - 1] + recvcounts[i - 1];
+    }
+    MPI_Gatherv(new_data, local_N, MPI_DOUBLE, sorted_array, recvcounts, displacements, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+
+
       CALI_MARK_BEGIN(correctness_check);
-      if (check_sorted(new_data, N))
+      if (check_sorted(sorted_array, N))
          printf("Sorted with Sample Sort\n");
       else
         printf("Unsuccessful Sort\n");
