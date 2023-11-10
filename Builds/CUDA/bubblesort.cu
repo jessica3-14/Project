@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <caliper/cali.h>
+#include<caliper/cali-manager.h>
+#include <adiak.hpp>
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -12,8 +14,8 @@ int NUM_VALS;
 
 __device__ int d_NUM_VALS; // Declare as a device constant
 
-const char* bubble_sort_step_region = "bubble_sort_step";
-const char* entire_computation_region = "entire_computation";
+//const char* bubble_sort_step_region = "bubble_sort_step";
+//const char* entire_computation_region = "entire_computation";
 int kernel_call;
 
 void print_elapsed(clock_t start, clock_t stop)
@@ -34,6 +36,15 @@ void array_fill(float *arr, int length)
   for (i = 0; i < length; ++i) {
     arr[i] = random_float();
   }
+}
+
+int verify(float *values){
+  for(int i = 0; i < sizeof(values)-1; i++){
+    if(values[i] > values[i+1]){
+      return -1;
+    }
+  }
+  return 1;
 }
 
 __global__ void bubble_sort_step(float *dev_values)
@@ -64,7 +75,7 @@ void bubble_sort(float *values)
   dim3 blocks(BLOCKS, 1);    /* Number of blocks   */
   dim3 threads(THREADS, 1);  /* Number of threads  */
 
-  CALI_MARK_BEGIN(bubble_sort_step_region);
+  CALI_MARK_BEGIN("comp_large");
 
   for (int i = 0; i < NUM_VALS - 1; ++i) {
     kernel_call++;
@@ -72,7 +83,7 @@ void bubble_sort(float *values)
   }
 
   cudaDeviceSynchronize();
-  CALI_MARK_END(bubble_sort_step_region);
+  CALI_MARK_END("comp_large");
 
   cudaMemcpy(values, dev_values, size, cudaMemcpyDeviceToHost);
 
@@ -89,18 +100,19 @@ int main(int argc, char *argv[])
   printf("Number of values: %d\n", NUM_VALS);
   printf("Number of blocks: %d\n", BLOCKS);
 
+  CALI_MARK_BEGIN("comp");
   clock_t start, stop;
-
+  CALI_MARK_BEGIN("data_init");
   float *values = (float*)malloc(NUM_VALS * sizeof(float));
   array_fill(values, NUM_VALS);
-
-  CALI_MARK_BEGIN(entire_computation_region);
+  CALI_MARK_END("data_init");
+  
 
   start = clock();
   bubble_sort(values); /* Inplace */
   stop = clock();
 
-  CALI_MARK_END(entire_computation_region);
+  CALI_MARK_END("comp");
 
   print_elapsed(start, stop);
 
@@ -111,6 +123,15 @@ int main(int argc, char *argv[])
   float kernel_execution_time_s = (float)(stop - start) / CLOCKS_PER_SEC; // Kernel execution time in seconds
   float effective_bandwidth_gb_s = (data_size_gb) / kernel_execution_time_s;
   printf("Effective Bandwidth (GB/s): %.6fGB/s\n", effective_bandwidth_gb_s);
+
+  CALI_MARK_BEGIN("correctness_check");
+  if(verify(values)){
+    printf("sort successful\n");
+  }
+  else{
+    printf("sort unsuccessful\n");
+  }
+  CALI_MARK_END("correctness_check");
 
   free(values);
 
