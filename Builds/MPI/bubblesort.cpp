@@ -22,8 +22,8 @@ void bubbleSort(double* test, int dataSize) {
 }
 
 int verify(double *test, int dataSize){
-  for(int i = 0; i < dataSize, i++){
-    if(array[i] > array[i+1]){
+  for(int i = 0; i < dataSize; i++){
+    if(test[i] > test[i+1]){
       return -1;
     }
   }
@@ -239,10 +239,10 @@ if(taskid == 0){
   */
   CALI_MARK_BEGIN("correctness_check");
   if(verify(test, 1000)){
-    printf("Sort successful\n")
+    printf("Sort successful\n");
   }
   else{
-    printf("Sort unsuccessful\n")
+    printf("Sort unsuccessful\n");
   }
   CALI_MARK_END("correctness_check");
 }
