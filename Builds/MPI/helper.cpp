@@ -20,23 +20,20 @@ void genData(int DATA_SIZE, int mode, double* final_arr) {
     //printf("initialized random engine\n");
 if(mode==0){ 
     // total random   
-    std::uniform_real_distribution<double> unif(0, 100000);
+    //std::uniform_real_distribution<double> unif(0, 100000);
     for (int i = 0; i<n_local_vals; i++){
-        data_arr[i] = unif(re);
+        data_arr[i] = rand() % n_local_vals;
     }
 }else if(mode==2){
     // reverse sorted 
-    std::uniform_real_distribution<double> unif(0, 100000/DATA_SIZE);
-    data_arr[0]=1000000 - 100000/world_size*world_rank;
-    for(int i=1;i<n_local_vals;i++){
-      data_arr[i]=data_arr[i-1]-unif(re);
+    data_arr[0] = 1000000 - 100000 / world_size * world_rank;
+    for (int i = 1; i < n_local_vals; i++) {
+      data_arr[i] = data_arr[i - 1] - (100000.0 / DATA_SIZE);
     }
 }else{
     // sorted data
-    std::uniform_real_distribution<double> unif(0, 100000/DATA_SIZE);
-    data_arr[0]=100000/world_size*world_rank;
-    for(int i=1;i<n_local_vals;i++){
-      data_arr[i]=data_arr[i-1]+unif(re);
+    for (int i = 0; i < n_local_vals; i++) {
+      data_arr[i] = 100000 / world_size * world_rank + (100000.0 / DATA_SIZE) * i;
     }
   if(mode==3){
   // adding 1% noise
@@ -80,4 +77,3 @@ void check_sort(double* data, int data_size, int* retval){
 
 
 }
-
