@@ -35,6 +35,5 @@ module load GCCcore/7.3.0
 
 
 
-CALI_CONFIG="spot(output=t${num_threads}-v${num_vals}-m${mode}.cali), \
-    cuda.gputime" \
+CALI_CONFIG="spot(output=t${num_threads}-v${num_vals}-m${mode}.cali), cuda.gputime" \
 ./bucket.out $num_threads $num_vals $mode

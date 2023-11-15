@@ -1,6 +1,6 @@
 #include <iostream>
 #include <thrust/device_vector.h>
-
+#include "helper.cu"
 #include <thrust/host_vector.h>
 #include <caliper/cali.h>
 #include <caliper/cali-manager.h>
@@ -14,14 +14,9 @@ __global__ void bucketSort(double* input, double* output,int* d_sizes, int numEl
     if (tid < numElements) {
 
         // Determine which bucket the element belongs to
-
         int bucketIdx = input[tid] * numBuckets / 100000 ;
-
-
-
         // Store the element in the corresponding bucket
 	int pos = atomicAdd(&d_sizes[bucketIdx],1);
-
         output[bucketIdx*numElements+pos] = input[tid];
     }
 
@@ -30,6 +25,7 @@ __global__ void bucketSort(double* input, double* output,int* d_sizes, int numEl
 
 
 int main(int argc, char** argv) {
+const char* main = "main";
 const char* data_init = "data_init";
 const char* comm = "comm";
 const char* comm_small = "comm_small";
@@ -46,23 +42,12 @@ const char* correctness_check = "correctness_check";
     
     cali::ConfigManager mgr;
     mgr.start();
-
+    CALI_MARK_BEGIN(main);
     CALI_MARK_BEGIN(data_init);
-    thrust::host_vector<double> h_input(numElements);
+    thrust::host_vector<double> h_input(numElements,0);
 
 
-
-
-
-    // Initialize the input array with random values
-
- 
-
-    for (int i = 0; i < numElements; i++) {
-
-        h_input[i] = rand() % 100000;
-
-    }
+    genData(numElements,mode,thrust::raw_pointer_cast(h_input.data()));
     CALI_MARK_END(data_init);
 
     CALI_MARK_BEGIN(comm);
@@ -85,12 +70,6 @@ const char* correctness_check = "correctness_check";
     bucketSort<<<numBlocks, blockSize>>>(thrust::raw_pointer_cast(d_input.data()), thrust::raw_pointer_cast(d_output.data()),thrust::raw_pointer_cast(d_sizes.data()), numElements, numBuckets);
 CALI_MARK_END(comp_large);
 CALI_MARK_END(comp);
-
-
-    // Sort each bucket (you can use thrust::sort here)
-	
-
-    // Combine the sorted buckets to get the final sorted array
 
     CALI_MARK_BEGIN(comp);
     CALI_MARK_BEGIN(comp_large);
@@ -121,14 +100,13 @@ CALI_MARK_END(comm);
 
 CALI_MARK_BEGIN(correctness_check);
     for (int i = 0; i < numElements-1; i++) {
-
         if(h_output[i]>h_output[i+1]){
 	    printf("Error correctness check failed");
 	}
 
     }
 CALI_MARK_END(correctness_check);
-
+CALI_MARK_END(main);
 mgr.stop();
    mgr.flush();
 
