@@ -24,7 +24,7 @@ if(mode==0){
     for (int i = 0; i<n_local_vals; i++){
         data_arr[i] = unif(re);
     }
-}else if(mode==4){
+}else if(mode==2){
     // reverse sorted 
     std::uniform_real_distribution<double> unif(0, 100000/DATA_SIZE);
     data_arr[0]=1000000 - 100000/world_size*world_rank;
