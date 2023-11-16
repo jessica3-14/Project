@@ -22,7 +22,7 @@ if(mode==0){
     // total random   
     //std::uniform_real_distribution<double> unif(0, 100000);
     for (int i = 0; i<n_local_vals; i++){
-        data_arr[i] = rand() % n_local_vals;
+        data_arr[i] = rand() % 100000;
     }
 }else if(mode==2){
     // reverse sorted 

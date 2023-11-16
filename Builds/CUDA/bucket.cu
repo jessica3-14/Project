@@ -25,6 +25,7 @@ __global__ void bucketSort(double* input, double* output,int* d_sizes, int numEl
 
 
 
+
 int main(int argc, char** argv) {
 const char* main = "main";
 const char* data_init = "data_init";
@@ -47,7 +48,7 @@ float gpu_time=0;
     CALI_MARK_BEGIN(data_init);
     thrust::host_vector<double> h_input(numElements,0);
 
-    genData(numElements,mode,thrust::raw_pointer_cast(h_input.data()));
+    genData(numElements,mode,thrust::raw_pointer_cast(h_input.data()),numBuckets);
     CALI_MARK_END(data_init);
 
     CALI_MARK_BEGIN(comm);
@@ -81,6 +82,7 @@ CALI_MARK_END(comp);
 start = std::chrono::high_resolution_clock::now();
 for(int i=0;i<numBuckets;i++){
 thrust::sort(thrust::device,d_output.begin()+numElements*i,d_output.begin()+numElements*i+d_sizes[i],thrust::less<double>());
+//run_qsort(thrust::raw_pointer_cast(d_output.begin())+numElements*i,d_sizes[i]);
 }
     cudaDeviceSynchronize();
 stop = std::chrono::high_resolution_clock::now();

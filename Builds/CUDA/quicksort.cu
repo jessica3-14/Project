@@ -125,6 +125,24 @@ int main(int argc, char* argv[]) {
   CALI_MARK_END("correctness_check");
 
   free(values);
+
+adiak::init(NULL);
+adiak::launchdate();    // launch date of the job
+adiak::libraries();     // Libraries used
+adiak::cmdline();       // Command line used to launch the job
+adiak::clustername();   // Name of the cluster
+adiak::value("Algorithm", "quick"); // The name of the algorithm you are using (e.g., "MergeSort", "BitonicSort")
+adiak::value("ProgrammingModel", "CUDA"); // e.g., "MPI", "CUDA", "MPIwithCUDA"
+adiak::value("Datatype", "double"); // The datatype of input elements (e.g., double, int, float)
+adiak::value("SizeOfDatatype", sizeof(double)); // sizeof(datatype) of input elements in bytes (e.g., 1, 2, 4)
+adiak::value("InputSize", NUM_VALS); // The number of elements in input dataset (1000)
+adiak::value("InputType",0); // For sorting, this would be "Sorted", "ReverseSorted", "Random", "1%perturbed"
+adiak::value("num_procs", THREADS); // The number of processors (MPI ranks)
+adiak::value("group_num", 12); // The number of your group (integer, e.g., 1, 10)
+
+adiak::value("implementation_source", "AI"); // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
+
+
   mgr.stop();
   mgr.flush();
 }

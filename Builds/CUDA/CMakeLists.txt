@@ -14,7 +14,7 @@ find_package(adiak REQUIRED)
 
 
 
-add_executable(bucket.out bucket.cu)
+add_executable(bucket.out quicksort.cu)
 
 
 
