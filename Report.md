@@ -525,7 +525,7 @@ Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 
 Similar to the communication graphs, the main graphs performance for main is poor with pretty flat lines throughout all 4 data input types. This is due to the fact that the CUDA implementation was done poorly in terms of parallelization.
 
 ##### Weak Scaling:
-![Main CUDA Graphs](Images/main_bubble_weak.PNG)\
+![Main CUDA Graphs](Images/main_bubble_cuda_weak.PNG)\
 Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
 As stated above, since the CUDA implementation was not parallelized well, there is a very weak scaling, but is almost not noticeable. There is almost no difference between the 4 data input types since they all perform poorly.
 
@@ -569,7 +569,7 @@ Another inference is that larger data sizes demonstrate a better correlation for
 ![CUDA Percent Strong Scaling Graphs](Images/cuda_sample_percent_strong.png)\
 ![CUDA Percent Weak Scaling Graphs](Images/cuda_sample_percent_weak.png)
 ##### Analysis
-From the different graphs, there are no noticeable differences in sorting performance with different input types. Furthermore, the strong scaling graphs demonstrate that there is good parallelization for smaller input sizes, but struggles with larger input sizes. I don’t really know why this is the case, but it looks like to me that maybe there weren’t enough resources to allocate between threads for the larger input sizes. The weak scaling shows there is good parallelization for only the smallest input size. I think I should have tested even more smaller input sizes to make sure that this isn’t just an outlier but that my code actually parallizes for smaller input sizes.
+From the different graphs, there are no noticeable differences in sorting performance with different input types. Furthermore, the strong scaling graphs demonstrate that there is good parallelization for smaller input sizes, but struggles with larger input sizes. I don’t really know why this is the case, but it looks like to me that maybe there weren’t enough resources to allocate between threads for the larger input sizes. The weak scaling shows there is good parallelization for only the smallest input size. I think I should have tested even more smaller input sizes to make sure that this isn’t just an outlier but that my code actually parallelizes for smaller input sizes.
 
 ## 4c Performance Metrics
 - `Time`
