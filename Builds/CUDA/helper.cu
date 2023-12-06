@@ -48,7 +48,7 @@ __global__ void perturb1(double *data, int n) {
     }
 }
 
-void genData(int dataSize, int mode, double* final_arr) {
+void genData(int dataSize, int mode, double* final_arr,int numBuckets) {
 
 
     double* deviceData;
@@ -63,7 +63,7 @@ void genData(int dataSize, int mode, double* final_arr) {
 
     // Set up the CUDA grid and block sizes
 
-    int blockSize = 256;
+    int blockSize = numBuckets;
 
     int gridSize = (dataSize + blockSize - 1) / blockSize;
 curandState state;

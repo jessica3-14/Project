@@ -22,26 +22,25 @@ if(mode==0){
     // total random   
     //std::uniform_real_distribution<double> unif(0, 100000);
     for (int i = 0; i<n_local_vals; i++){
-        data_arr[i] = rand() % n_local_vals;
+        data_arr[i] = rand() % 100000;
     }
 }else if(mode==2){
     // reverse sorted 
-    data_arr[0] = 1000000 - 100000 / world_size * world_rank;
-    for (int i = 1; i < n_local_vals; i++) {
-      data_arr[i] = data_arr[i - 1] - (100000.0 / DATA_SIZE);
+    for (int i = 0; i < n_local_vals; i++) {
+      data_arr[n_local_vals-i] = 100000 / world_size * world_rank + (100000.0 / (DATA_SIZE+1)) * i;
     }
 }else{
     // sorted data
     for (int i = 0; i < n_local_vals; i++) {
-      data_arr[i] = 100000 / world_size * world_rank + (100000.0 / DATA_SIZE) * i;
+      data_arr[i] = 100000 / world_size * world_rank + (100000.0 / (DATA_SIZE+1)) * i;
     }
   if(mode==3){
   // adding 1% noise
   double temp;
   int noise_index1,noise_index2;
   for(int i=0;i<n_local_vals/100;i++){
-    noise_index1 = rand()/n_local_vals;
-    noise_index2 = rand()/n_local_vals;
+    noise_index1 = rand()%n_local_vals;
+    noise_index2 = rand()%n_local_vals;
 
     temp=data_arr[noise_index1];
     data_arr[noise_index1]=data_arr[noise_index2];

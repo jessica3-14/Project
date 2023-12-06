@@ -1,28 +1,73 @@
-#include "helper.cpp"
+#include <mpi.h>
+#include <iostream>
+#include <vector>
+#include <algorithm>
 #include <caliper/cali.h>
-#include<caliper/cali-manager.h>
+#include <caliper/cali-manager.h>
 #include <adiak.hpp>
-#include <random>
+//#include "helper.cpp"
 
 #define MASTER 0
-#define FROM_MASTER 1
-#define FROM_WORKER 2
 
-void bubbleSort(double* test, int dataSize) {
-  bool swapped = true;
-  while(swapped) {
-    swapped = false;
-    for(int i = 0; i < dataSize - 1; i++) {
-      if(test[i] > test[i+1]) {
-        std::swap(test[i], test[i+1]);
-        swapped = true;
-      }
+void genData(int dataSize, int mode, double* test){
+    int world_size;
+    MPI_Comm_size( MPI_COMM_WORLD , &world_size);
+    int world_rank;
+    MPI_Comm_rank( MPI_COMM_WORLD , &world_rank);
+    int n_local_vals = dataSize/world_size;
+    if(mode == 0){
+        //randomly sorted data
+        for (int i = 0; i<n_local_vals; i++){
+            test[i] = rand() % 100000;
+        }
     }
-  }
+    else if(mode == 1){
+        //sorted data
+        for (int i = 0; i < n_local_vals; i++) {
+            test[i] = 100000 / world_size * world_rank + (100000.0 / (dataSize+1)) * i;
+        }
+    }
+    else if(mode == 2){
+        //reverse sorted data
+        for (int i = 0; i < n_local_vals; i++) {
+            test[n_local_vals-i] = 100000 / world_size * world_rank + (100000.0 / (dataSize+1)) * i;
+        }
+    }
+    else{
+        //1% noise
+        double temp;
+        int noise_index1,noise_index2;
+        for(int i=0;i<n_local_vals/100;i++){
+            noise_index1 = rand()%n_local_vals;
+            noise_index2 = rand()%n_local_vals;
+
+            temp=test[noise_index1];
+            test[noise_index1]=test[noise_index2];
+            test[noise_index2]=temp;
+        } 
+    }
+}
+
+int partnerFind(int phase, int myrank) {
+    int partner;
+    if (phase % 2 == 0) {
+        if (myrank % 2 == 0) {
+            partner = myrank + 1;
+        } else {
+            partner = myrank - 1;
+        }
+    } else {
+        if (myrank % 2 == 0) {
+            partner = myrank - 1;
+        } else {
+            partner = myrank + 1;
+        }
+    }
+    return partner;
 }
 
 int verify(double *test, int dataSize){
-  for(int i = 0; i < dataSize; i++){
+  for(int i = 0; i < dataSize-1; i++){
     if(test[i] > test[i+1]){
       return -1;
     }
@@ -31,257 +76,131 @@ int verify(double *test, int dataSize){
 }
 
 int main(int argc, char** argv){
+    const char* main = "main";
+    const char* data_init = "data_init";
+    const char* comm = "comm";
+    const char* comm_large = "comm_large";
+    const char* comp = "comp";
+    const char* comp_large = "comp_large";
+    const char* correctness_check = "correctness_check";
+    
+    cali::ConfigManager mgr;
+    mgr.start();
 
-int taskid;
-int numprocs;
-int mtype;
-int source;
-int destination;
-int numworkers;
-int rc;
+    int my_rank, numprocs;
 
-MPI_Status status;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+    CALI_MARK_BEGIN(main);
 
-MPI_Init(&argc,&argv);
-MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
-MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
+    if (numprocs < 2) {
+        MPI_Abort(MPI_COMM_WORLD, -1);
+    }
 
-const char* comp = "whole_computation";
-const char* master_initialization = "master_initialization";
-const char* comm_large = "master_bubble";
-const char* comm_small = "worker_send";
-//const char* comp_small = "worker_receive";
-const char* comp_small = "worker_calculation";
+    int mode = 0;
+    int dataSize = 100;
 
-//double whole_comp_start_time, whole_comp_end_time, whole_comp_time;
-//double master_init_start_time, master_init_end_time, master_init_time;
-//double master_bubble_start_time, master_bubble_end_time, master_bubble_time;
-//double worker_send_start_time, worker_send_end_time, worker_send_time;
-//double worker_receive_start_time, worker_receive_end_time, worker_receive_time;
-//double worker_calc_start_time, worker_calc_end_time, worker_calc_time;
+    dataSize = std::atoi(argv[1]);
+    mode = std::atoi(argv[2]);
 
-MPI_Comm workcom;
-MPI_Comm_split(MPI_COMM_WORLD, taskid != 0, taskid, &workcom);
+    unsigned long local_data = dataSize / numprocs;
+    double* test = new double[local_data];
+    double* final_arr = nullptr;
 
-if (numprocs < 2 ) {
-  //printf("Need at least two MPI tasks. Quitting...\n");
-  MPI_Abort(MPI_COMM_WORLD, rc);
-  exit(1);
-  }
-numworkers = numprocs-1;
+    CALI_MARK_BEGIN(data_init);
+    genData(dataSize, mode, test);
+    CALI_MARK_END(data_init);
 
-//printf("Process %d is sending the array to workers\n", taskid);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-//start whole computation
-CALI_MARK_BEGIN(comp);
-//whole_comp_start_time = MPI_Wtime();
+    //bubble_sort(test, numprocs, local_data, my_rank);
+    const unsigned long size = local_data * 2;
+    auto* temp = new double[local_data];
+    auto* data = new double[size];
 
-cali::ConfigManager mgr;
-mgr.start();
+    for(int i = 0; i < numprocs; i++){
+        int partner = partnerFind(i, my_rank);
+        if(partner >= numprocs || partner < 0){
+            continue;
+        }
 
-double* test = new double[1000];
-int chunkSize = 1000 / (numprocs - 1);
+        CALI_MARK_BEGIN(comm);
+        CALI_MARK_BEGIN(comm_large);
+        if(my_rank % 2 == 0){
+            MPI_Send(test, (double) local_data, MPI_DOUBLE, partner, 0, MPI_COMM_WORLD);
+            MPI_Recv(temp, (double) local_data, MPI_DOUBLE, partner, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+        else{
+            MPI_Recv(temp, (double) local_data, MPI_DOUBLE, partner, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Send(test, (double) local_data, MPI_DOUBLE, partner, 0, MPI_COMM_WORLD);
+        }
+        CALI_MARK_END(comm_large);
+        CALI_MARK_END(comm);
 
+        CALI_MARK_BEGIN(comp);
+        CALI_MARK_BEGIN(comp_large);
+        std::merge(test, test+local_data, temp, temp+local_data, data);
+        std::sort(data, data+size);
 
-if(taskid == MASTER){
-  //printf("bubble_sort has started with %d tasks.\n", numprocs);
-  //printf("****************************************************************\n");
-  //start master initialization 
-  CALI_MARK_BEGIN(master_initialization);
-  //master_init_start_time = MPI_Wtime();
+        auto half_data = data + local_data;
 
-  //genData(1000,1,test);
-  for(int i = 0; i < 1000; i++){
-    test[i] = rand() % 1000;
-  }
-  
-  //master_init_end_time = MPI_Wtime();
-  //master_init_time = master_init_end_time - master_init_start_time;
-  CALI_MARK_END(master_initialization);
-  //end master initialization
-  
-  //start master bubble
-  CALI_MARK_BEGIN(comm_large);
-  //master_bubble_start_time = MPI_Wtime();
-  
-  mtype = FROM_MASTER;
-  //std::cout << "sending array from master to worker" << std::endl;
-  destination = 1;
-  for(int dest = 1; dest < numprocs; dest++){
-    MPI_Send(&chunkSize, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
-    MPI_Send(&test[(dest-1)*chunkSize], chunkSize, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
-  }
-  
-  mtype = FROM_WORKER;
-  //std::cout << "receiving array from master to worker" << std::endl;
-  for(int source = 1; source < numprocs; source++){
-    MPI_Recv(&test[(source-1)*chunkSize], chunkSize, MPI_DOUBLE, source, mtype, MPI_COMM_WORLD, &status);
-  }
-  
-  //master_bubble_end_time = MPI_Wtime();
-  //master_bubble_time = master_bubble_end_time - master_bubble_start_time;
-  CALI_MARK_END(comm_large);
-}
-//end master bubble
+        if(my_rank < partner){
+            std::copy(data, half_data, test);
+        }
+        else{
+            std::copy(half_data, data+size, test);
+        }
+        CALI_MARK_END(comp_large);
+        CALI_MARK_END(comp);
+    }
 
-if(taskid > MASTER){
-  //start worker receive
-  CALI_MARK_BEGIN(comm_small);
-  //worker_receive_start_time = MPI_Wtime();
-  
-  mtype = FROM_MASTER;
-  MPI_Recv(&chunkSize, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, &status);
-  
-  double* localData = new double[chunkSize];
-  
-  MPI_Recv(localData, chunkSize, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, &status);
-  
-  //worker_receive_end_time = MPI_Wtime();
-  //worker_receive_time = worker_receive_end_time - worker_receive_start_time;
-  CALI_MARK_END(comm_small);
-  //end worker receive
-  
-  //start worker calculation
-  CALI_MARK_BEGIN(comp_small);
-  //worker_calc_start_time = MPI_Wtime();
-  
-  bubbleSort(localData, chunkSize);
-  
-  //worker_calc_end_time = MPI_Wtime();
-  //worker_calc_time = worker_calc_end_time - worker_calc_start_time;
-  CALI_MARK_END(comp_small);
-  //end worker calculation
-  
-  //start worker send
-  CALI_MARK_BEGIN(comm_small);
-  //worker_send_start_time = MPI_Wtime();
-  
-  mtype = FROM_WORKER;
-  MPI_Send(localData, chunkSize, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
-  
-  //worker_send_end_time = MPI_Wtime();
-  //worker_send_time = worker_send_end_time - worker_send_start_time;
-  CALI_MARK_END(comm_small);
-  //end worker send
+    if (my_rank == MASTER) {
+        final_arr = new double[dataSize];
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
 
-  delete[] localData;
-}
+    CALI_MARK_BEGIN(comm);
+    CALI_MARK_BEGIN(comm_large);
+    MPI_Gather( test , local_data , MPI_DOUBLE , final_arr , local_data , MPI_DOUBLE , 0 , MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
+    CALI_MARK_END(comm_large);
+    CALI_MARK_END(comm);
 
-//end whole computation
-//whole_comp_end_time = MPI_Wtime();
-//whole_comp_time = whole_comp_end_time - whole_comp_start_time;
-CALI_MARK_END(comp);
+    if (my_rank == MASTER) {
+        CALI_MARK_BEGIN(correctness_check);
+        if (verify(final_arr, dataSize) == 1) {
+            printf("Sort successful\n");
+        } else {
+            printf("Sort unsuccessful\n");
+        }
+        CALI_MARK_END(correctness_check);
 
-//int ret=0;
-//check_sort(test,1000,&ret);
-//printf("%d\n",ret);
+        delete[] final_arr;
+        delete[] test;
+    }
+    CALI_MARK_END(main);
+    
+    if(my_rank == MASTER){
+    adiak::init(NULL);
+    adiak::launchdate();
+    adiak::libraries();
+    adiak::cmdline();
+    adiak::clustername();
+    adiak::value("Algorithm", "Bubblesort");
+    adiak::value("ProgrammingModel", "MPI");
+    adiak::value("Datatype", "double");
+    adiak::value("SizeOfDatatype", sizeof(double));
+    adiak::value("InputSize", dataSize);
+    adiak::value("InputType", mode);
+    adiak::value("num_procs", numprocs);
+    adiak::value("group_num", 12);
+    adiak::value("implementation_source", "https://www.geeksforgeeks.org/bubble-sort/");
 
-adiak::init(NULL);
-   adiak::user();
-   adiak::launchdate();
-   adiak::libraries();
-   adiak::cmdline();
-   adiak::clustername();
-   adiak::value("num_procs", numprocs);
+    mgr.stop();
+    mgr.flush();
+    }
 
-
-//double worker_receive_time_max, worker_receive_time_min, worker_receive_time_sum, worker_receive_time_avg = 0;
-//double worker_send_time_max, worker_send_time_min, worker_send_time_sum, worker_send_time_avg = 0;
-//double worker_calc_time_max, worker_calc_time_min, worker_calc_time_sum, worker_calc_time_avg = 0;
-
-//MPI_Reduce(&worker_receive_time, &worker_receive_time_max, 1, MPI_DOUBLE, MPI_MAX, MASTER, workcom);
-//MPI_Reduce(&worker_receive_time, &worker_receive_time_min, 1, MPI_DOUBLE, MPI_MIN, MASTER, workcom);
-//MPI_Reduce(&worker_receive_time, &worker_receive_time_sum, 1, MPI_DOUBLE, MPI_SUM, MASTER, workcom);
-
-//MPI_Reduce(&worker_send_time, &worker_send_time_max, 1, MPI_DOUBLE, MPI_MAX, MASTER, workcom);
-//MPI_Reduce(&worker_send_time, &worker_send_time_min, 1, MPI_DOUBLE, MPI_MIN, MASTER, workcom);
-//MPI_Reduce(&worker_send_time, &worker_send_time_sum, 1, MPI_DOUBLE, MPI_SUM, MASTER, workcom);
-
-//MPI_Reduce(&worker_calc_time, &worker_calc_time_max, 1, MPI_DOUBLE, MPI_MAX, MASTER, workcom);
-//MPI_Reduce(&worker_calc_time, &worker_calc_time_min, 1, MPI_DOUBLE, MPI_MIN, MASTER, workcom);
-//MPI_Reduce(&worker_calc_time, &worker_calc_time_sum, 1, MPI_DOUBLE, MPI_SUM, MASTER, workcom);
-
-
-
-if(taskid == 0){
-/*
-  printf("\n");
-  printf("Master times:\n");
-  printf("whole computation time: %f\n", whole_comp_time);
-  printf("master initialization time: %f\n", master_init_time);
-  printf("master bubble time: %f\n", master_bubble_time);
-  printf("\n");
-  
-  adiak::value("MPI_Reduce-whole-computation_time", whole_comp_time);
-  adiak::value("MPI_Reduce-master_initialization_time", master_init_time);
-  adiak::value("MPI_Reduce-master_bubble_time", master_bubble_time);
-  
-  mtype = FROM_WORKER;
-  MPI_Recv(&worker_receive_time_max, 1, MPI_DOUBLE, 1, mtype, MPI_COMM_WORLD, &status);
-  MPI_Recv(&worker_receive_time_min, 1, MPI_DOUBLE, 1, mtype, MPI_COMM_WORLD, &status);
-  MPI_Recv(&worker_receive_time_avg, 1, MPI_DOUBLE, 1, mtype, MPI_COMM_WORLD, &status);
-  MPI_Recv(&worker_send_time_max, 1, MPI_DOUBLE, 1, mtype, MPI_COMM_WORLD, &status);
-  MPI_Recv(&worker_send_time_min, 1, MPI_DOUBLE, 1, mtype, MPI_COMM_WORLD, &status);
-  MPI_Recv(&worker_send_time_avg, 1, MPI_DOUBLE, 1, mtype, MPI_COMM_WORLD, &status);
-  MPI_Recv(&worker_calc_time_max, 1, MPI_DOUBLE, 1, mtype, MPI_COMM_WORLD, &status);
-  MPI_Recv(&worker_calc_time_min, 1, MPI_DOUBLE, 1, mtype, MPI_COMM_WORLD, &status);
-  MPI_Recv(&worker_calc_time_avg, 1, MPI_DOUBLE, 1, mtype, MPI_COMM_WORLD, &status);
-  
-  adiak::value("MPI_Reduce-worker_receive_time_max", worker_receive_time_max);
-  adiak::value("MPI_Reduce-worker_receive_time_min", worker_receive_time_min);
-  adiak::value("MPI_Reduce-worker_receive_time_avg", worker_receive_time_avg);
-  adiak::value("MPI_Reduce-worker_send_time_max", worker_send_time_max);
-  adiak::value("MPI_Reduce-worker_send_time_min", worker_send_time_min);
-  adiak::value("MPI_Reduce-worker_send_time_avg", worker_send_time_avg);
-  adiak::value("MPI_Reduce-worker_calculation_time_max", worker_calc_time_max);
-  adiak::value("MPI_Reduce-worker_calculation_time_min", worker_calc_time_min);
-  adiak::value("MPI_Reduce-worker_calculation_time_avg", worker_calc_time_avg);
-  */
-  CALI_MARK_BEGIN("correctness_check");
-  if(verify(test, 1000)){
-    printf("Sort successful\n");
-  }
-  else{
-    printf("Sort unsuccessful\n");
-  }
-  CALI_MARK_END("correctness_check");
-}
-/*
-else if(taskid == 1){
-
-  worker_receive_time_avg = worker_receive_time_sum / (double)numworkers;
-  worker_send_time_avg = worker_send_time_sum / (double)numworkers;
-  worker_calc_time_avg = worker_calc_time_sum / (double)numworkers;
-  
-  printf("\n");
-  printf("Worker times:\n");
-  printf("Min worker receive time: %f\n", worker_receive_time_min);
-  printf("Max worker receive time: %f\n", worker_receive_time_max);
-  printf("Average worker receive time: %f\n", worker_receive_time_avg);
-  //printf("worker receive time: %f\n", worker_receive_time);
-  printf("Min worker send time: %f\n", worker_send_time_min);
-  printf("Max worker send time: %f\n", worker_send_time_max);
-  printf("Average worker send time: %f\n", worker_send_time_avg);
-  //printf("worker send time: %f\n", worker_send_time);
-  printf("Min worker calculation time: %f\n", worker_calc_time_min);
-  printf("Max worker calculation time: %f\n", worker_calc_time_max);
-  printf("Average worker calculation time: %f\n", worker_calc_time_avg);
-  //printf("worker calculation time: %f\n", worker_calc_time);
-  
-  mtype = FROM_WORKER;
-  MPI_Send(&worker_receive_time_max, 1, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
-  MPI_Send(&worker_receive_time_min, 1, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
-  MPI_Send(&worker_receive_time_avg, 1, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
-  MPI_Send(&worker_send_time_max, 1, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
-  MPI_Send(&worker_send_time_min, 1, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
-  MPI_Send(&worker_send_time_avg, 1, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
-  MPI_Send(&worker_calc_time_max, 1, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
-  MPI_Send(&worker_calc_time_min, 1, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
-  MPI_Send(&worker_calc_time_avg, 1, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD);
-}
-*/
-mgr.stop();
-mgr.flush();
-
-MPI_Finalize();
+    MPI_Finalize();
+    return 0;
 }

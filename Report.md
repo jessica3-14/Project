@@ -11,9 +11,11 @@
 ## 2. _due 10/25_ Project topic
 Sorting algorithms
 
-## 2. _due 10/25_ Brief project description (what algorithms will you be comparing and on what architectures)
-
+## 2a. _due 10/25_ Project topic
+Sorting algorithms
 We will compare each of the four algorithms (Bucket Sort, QuickSort, Sample Sort, Bubble Sort) by implementing in MPI as well as Cuda. We plan to use reverse sorted, random, and 10% noisy data and compare each of the implementations across those as well.
+
+## 2b. _due 10/25_ Pseudocode for each parallel algorithm
 
 ### Bucket Sort
 ```
@@ -108,9 +110,22 @@ for i in range of 1 and piv_num
 we should have m-1 global splitters, now use these splitters for bucket sort
 perform bucket sort given m buckets and the bucket partitions being the global splitters
 
+### 2c. Evaluation Plan - what and how will you measure and compare
+For MPI:
+Processes: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024
+Input Size: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
+
+For CUDA:
+Threads: 64, 128, 256, 512, 1024
+Input Size: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
+
+We will be measuring strong scaling, weak scaling, and speedups of our algorithms and also compare how each of the datatypes (random, sorted, reverse sorted, and 1% perturbed) compare against each other.
+
+---
+
 ### 3. Project implementation
 
-All CUDA implementations were tested with 256 threads and 4096 NUM_VALS
+Pseudocode of our algorithms. We used Caliper Marks to time each section of our code and analyzed the resulting Caliper files. All implementations have at least the following marks: main, data_init, comp, comm, and correctness_check
 
 ### Bucket Sort
 Required Code Regions: data_init, comm, comp, comm_large, comp_large, comm_small
@@ -272,16 +287,21 @@ function main(argc: int, argv: string[]) -> int
 MPI Implementation (Pseudocode):
 
 ```
-function bubbleSort(data: array of double, dataSize: int)
-    swapped = true
-    while swapped
-        swapped = false
-        for i from 0 to dataSize - 2
-            if data[i] > data[i+1]
-                swap data[i] and data[i+1]
-            end if
-        end for
-    end while
+function partnerFind(int phase, int rank)
+    if phase % 2 == 0
+        if rank % 2 == 0
+            partner = rank + 1
+        else
+            partner = rank - 1
+        end if
+    else
+        if rank % 2 == 0
+            partner = rank - 1
+        else
+            partner = rank + 1
+        end if
+    end if
+    return partner
 end function
 
 function verify(data: array of double, dataSize: int) -> int
@@ -294,56 +314,67 @@ function verify(data: array of double, dataSize: int) -> int
 end function
 
 function main(argc: int, argv: array of string) -> int
-    taskid, numprocs, mtype, source, destination, numworkers, rc: int
-    status: MPI_Status
-    workcom: MPI_Comm
-    comp, master_initialization, comm_large, comm_small, comp_small: string
-    test: array of double
-    chunkSize: int
-    MPI_Init(argc, argv)
-    MPI_Comm_rank(MPI_COMM_WORLD, taskid)
-    MPI_Comm_size(MPI_COMM_WORLD, numprocs)
-    MPI_Comm_split(MPI_COMM_WORLD, taskid != 0, taskid, workcom)
-    if numprocs < 2
-        MPI_Abort(MPI_COMM_WORLD, rc)
-        exit(1)
-    end if
-    numworkers = numprocs - 1
-    test = new double[1000]
-    chunkSize = 1000 / (numprocs - 1)
-    if taskid == MASTER
-        for i from 0 to 1000 - 1
-            test[i] = rand() % 1000
-        end for
-        mtype = FROM_MASTER
-        destination = 1
-        for dest from 1 to numprocs - 1
-            MPI_Send(chunkSize, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD)
-            MPI_Send(test[(dest-1) * chunkSize], chunkSize, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD)
-        end for
-        mtype = FROM_WORKER
-        for source from 1 to numprocs - 1
-            MPI_Recv(test[(source-1) * chunkSize], chunkSize, MPI_DOUBLE, source, mtype, MPI_COMM_WORLD, status)
-        end for
-    end if
+    my_rank = get_MPI_Comm_rank(MPI_COMM_WORLD)
+    numprocs = get_MPI_Comm_size(MPI_COMM_WORLD)
 
-    if taskid > MASTER
-        mtype = FROM_MASTER
-        MPI_Recv(chunkSize, 1, MPI_INT, MASTER, mtype, MPI_COMM_WORLD, status)
-        localData = new double[chunkSize]
-        MPI_Recv(localData, chunkSize, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD, status)
-        bubbleSort(localData, chunkSize)
-        mtype = FROM_WORKER
-        MPI_Send(localData, chunkSize, MPI_DOUBLE, MASTER, mtype, MPI_COMM_WORLD)
-        delete[] localData
-    end if
-    if taskid == MASTER
-        if verify(test, 1000)
-            print("Sort successful")
-        else
-            print("Sort unsuccessful")
-        end if
-    end if
+    IF numprocs < 2 THEN
+        MPI_Abort(MPI_COMM_WORLD, -1)
+    END IF
+
+    mode = 0
+    dataSize = 100
+
+    dataSize = convert_to_integer(argv[1])
+    mode = convert_to_integer(argv[2])
+
+    local_data = dataSize / numprocs
+    test = new array of size local_data
+    final_arr = null
+
+    genData(dataSize, mode, test)
+
+    Initialize arrays temp and data
+
+    FOR i = 0 TO numprocs
+        partner = partnerFind(i, my_rank)
+
+        IF partner >= numprocs OR partner < 0 THEN
+            CONTINUE
+        END IF
+
+        IF my_rank % 2 == 0 THEN
+            MPI_Send(test, local_data, MPI_DOUBLE, partner, 0, MPI_COMM_WORLD)
+            MPI_Recv(temp, local_data, MPI_DOUBLE, partner, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE)
+        ELSE
+            MPI_Recv(temp, local_data, MPI_DOUBLE, partner, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE)
+            MPI_Send(test, local_data, MPI_DOUBLE, partner, 0, MPI_COMM_WORLD)
+        END IF
+
+        Merge test and temp arrays into data array
+        Sort data array
+
+        half_data = data + local_data
+
+        IF my_rank < partner THEN
+            Copy data to test
+        ELSE
+            Copy half_data to test
+        END IF
+    END FOR
+
+    IF my_rank == MASTER THEN
+        final_arr = new array of size dataSize
+    END IF
+
+    MPI_Gather(test, local_data, MPI_DOUBLE, final_arr, local_data, MPI_DOUBLE, 0, MPI_COMM_WORLD)
+
+    IF my_rank == MASTER THEN
+        IF verify(final_arr, dataSize) == 1 THEN
+            PRINT "Sort successful"
+        ELSE
+            PRINT "Sort unsuccessful"
+        END IF
+    END IF
 
     return 0
 end function
@@ -361,6 +392,75 @@ CUDA Implementation:
 
 In the cuda kernel, the computation for sorting each block/bucket is performed. After each bucket is sorted, we obtain the splitters from them with a cuda memcpy, and then each kernel places elements into their respective buckets. Another memcpy is used to copy the sorted values from the GPU to the main process into one array.
 
+### 3b. Collect Metadata
+We collect the following metadata in our implementations:
+Launch date of the job, libraries used, command line used to launch the job, name of the cluster, name of the algorithm, what the programming model is (MPI or CUDA), the datatype of input elements, size of the datatype, number of elements in the input dataset, what the input type is, number of processesors for MPI, number of threads for CUDA, number of blocks for CUDA, our group number, and where we got our source code from.
+
+---
+
+### 4. Performance evaluation
+MPI Comparison between Algorithms:
+![MPI Comparison Graph](Images/Mpi%20comp.png)
+For MPI, bucket sort is clearly the best implementation, even though communication time starts to become a limiting factor as the number of threads increases. This plot was done at 1048576 because that was the size that worked best across implementations. Sample sort was very inefficient and bubble sort was near constant.
+
+CUDA Comparison between Algorithms:
+![CUDA Comparison Graph](Images/cuda%20comp.png)
+For CUDA, bucket sort is still the best implementation by absolute terms. However, the odd-even version of bubble sort is more stable to thread sizes and would likely perform better across a variety of problems. This plot was also done at 1048576 because that was the size that worked best acroos implementations.
+
+### Bucket Sort:
+## MPI Comparisons:
+![Random Graphs](Images/mpi_bucket_random.png)\
+MPI scales very well with bucket sort. As thread count increases, the communication time increases because not only the data but also the bucket sizes and offsets must be communicated between processes, and this is a lot of overhead multiple times. We do see speedup of up to 100x for the largest input sizes which is good performance. The speedup is not quite enough to support weak scaling across the main of the program, but weak scaling is better for larger input sizes.\
+![Sorted Graphs](Images/mpi_bucket_sorted.png)\
+With sorted data, the algorithm works better than random with smaller input sizes, likely because it distributes more uniformly into buckets and is not subject to random fluctuation. This makes the speedup worse, especially for the small input sizes as it is faster at the baseline.\
+![Reverse Sorted Graphs](Images/mpi_bucket_reverse.png)\
+Reverse sorting follows a very similar trend to sorted data. Since everything is sorted into buckets and then combined, this type of symmetry is to be somewhat expected.\
+![1% Perturbed Graphs](Images/mpi_bucket_percent.png)\
+Adding 1% randomness does not change the overall performance that much from the fully sorted implementation. The bucket sizes are still very close to evenly distributed.\
+
+## CUDA Comparisons:
+
+![Random Graphs](Images/cuda_bucket_random.png)\
+CUDA exhibits exceptionally poor performance. This is random input. The comp_small region represents sorting the data into buckets, where the number of buckets is equal to the number of threads. This has a moderate parallelization, and is hindered by the necessity of using atomics to increment the counts of the numbers in each bucket. The comp_large region represents the region of sorting all the buckets. I tried bitonic as well as thrust::sort, and both of them had qualitiatively similar results. The challenge is that although the sorting of one bucket is parallellized, each bucket must be sorted. So more threads means more buckets means more sorting, which is why comp_large increases with threads.\
+![Sorted Graphs](Images/cuda_bucket_sorted.png)\
+With sorted input, we see less parallelization in the sorting data into buckets region. This is because the data is sorted so each thread in a block will be adding to the same bucket, resulting in longer waiting times for the atomic incrementing of the counts of the numbers in each bucket.\
+![Reverse Sorted Graphs](Images/cuda_bucket_reverse.png)\
+Reverse sorted input shows a similar trend to sorted input, again as bucket sort is fairly symmetric.\
+![1% Perturbed Graphs](Images/cuda_bucket_percent.png)\
+Perturbing the data by 1% does not significantly change performance, but does make it fluctuate a little.\
+
+### Bubble Sort:
+## MPI Comparison between Input Types:
+# Strong Scaling:
+![Computation Graphs](Images/comp_bubble_strong.PNG)\
+Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed\
+From the 4 graphs, we can see that the random input type and 1% input type had the best strong scaling for the computation time. This is because of the fact that the bubble sort parallel implementation had to use an odd even transposition to make it parallelized. Odd even transposition works for higher input sizes which you can see that the time decreases as the input size increases. Additionally, due to the nature of odd even transposition, having a random input and 1% perturbed input is more efficient than a sorted or reverse sorted input.\
+# Weak Scaling:
+![Main Graphs](Images/main_bubble_weak.PNG)\
+Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed\
+From the 4 graphs, we can see that the main implementation of bubble sort scales weakly throughout all 4 input types. This is due to the fact that bubble sort itself is an extremely inefficient algorithm even with the help of an odd even transposition. This can also imply that the communication time was inefficient as well. Although the bubble sort implementation for MPI was parallelized, it was not parallelized well hence the weak scaling.\
+# Speedup:
+![Speedup Graphs](Images/speedup_bubble.PNG)\
+Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed\
+As seen from the 4 graphs, the speedup for each of the input type was not good, but out of the 4 data input types, the best speedup was the random input type. This is attributed to the fact that the odd even transposition works best with a random data than sorted or reverse sorted. However, since the implementation is still a bubble sort algorithm, the efficiency of the sorting gets worse if the data size is small.\
+
+Based on the analysis, the random input data performed the best which was expected given the behavior of odd even transposition, but due to the inherent inefficiency of bubble sort, it did not matter what kind of data type was used or what the data size was, leading it to still be pretty inefficient.\
+
+## CUDA Comparison between Input Types:
+# Strong Scaling:
+![Communication Graphs](Images/comm_bubble_cuda_Strong.PNG)\
+Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
+The CUDA implementation was not done well and in turn, it was parallelized very very inefficiently with extremely poor performance. As we can see from the 4 graphs, there is almost no strong scaling visible in the communication time for any of the data input types. I tried using the odd even transposition for the CUDA implementation as well and it was not parallelized well hence the extremely flat lines.
+
+# Weak Scaling:
+![Main Graphs](Images/main_bubble_weak.PNG)\
+Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
+As stated above, since the CUDA implementation was not parallelized well, there is a very weak scaling, but is almost not noticeable. There is almost no difference between the 4 data input types since they all perform poorly.
+
+# Speedup:
+![Speedup Graphs](Images/bubble_cuda_speedup.PNG)\
+Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
+Since the CUDA implementation was not parallelized well, the speedups between the 4 graphs are all over the place. The one that did the best between the 4 input data types would be sorted and reverse sorted surprisingly given that odd even transposition performs poorly when the data is already sorted or reverse sorted.
 
 ### 4. Team communication
 Our team will mainly be using discord as our means of communication due to the fact that it is easy to use and if we ever need to voice call or meet up remotely, we do not have to set up a zoom meeting.
