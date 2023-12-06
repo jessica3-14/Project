@@ -408,58 +408,57 @@ CUDA Comparison between Algorithms:
 For CUDA, bucket sort is still the best implementation by absolute terms. However, the odd-even version of bubble sort is more stable to thread sizes and would likely perform better across a variety of problems. This plot was also done at 1048576 because that was the size that worked best acroos implementations.
 
 ### Bucket Sort:
-MPI Comparisons:
-![Random Graphs](Images/mpi_bucket_random.png)
-MPI scales very well with bucket sort. As thread count increases, the communication time increases because not only the data but also the bucket sizes and offsets must be communicated between processes, and this is a lot of overhead multiple times. We do see speedup of up to 100x for the largest input sizes which is good performance. The speedup is not quite enough to support weak scaling across the main of the program, but weak scaling is better for larger input sizes.
-![Sorted Graphs](Images/mpi_bucket_sorted.png)
-With sorted data, the algorithm works better than random with smaller input sizes, likely because it distributes more uniformly into buckets and is not subject to random fluctuation. This makes the speedup worse, especially for the small input sizes as it is faster at the baseline.
-![Reverse Sorted Graphs](Images/mpi_bucket_reverse.png)
-Reverse sorting follows a very similar trend to sorted data. Since everything is sorted into buckets and then combined, this type of symmetry is to be somewhat expected.
-![1% Perturbed Graphs](Images/mpi_bucket_percent.png)
-Adding 1% randomness does not change the overall performance that much from the fully sorted implementation. The bucket sizes are still very close to evenly distributed.
+## MPI Comparisons:
+![Random Graphs](Images/mpi_bucket_random.png)\
+MPI scales very well with bucket sort. As thread count increases, the communication time increases because not only the data but also the bucket sizes and offsets must be communicated between processes, and this is a lot of overhead multiple times. We do see speedup of up to 100x for the largest input sizes which is good performance. The speedup is not quite enough to support weak scaling across the main of the program, but weak scaling is better for larger input sizes.\
+![Sorted Graphs](Images/mpi_bucket_sorted.png)\
+With sorted data, the algorithm works better than random with smaller input sizes, likely because it distributes more uniformly into buckets and is not subject to random fluctuation. This makes the speedup worse, especially for the small input sizes as it is faster at the baseline.\
+![Reverse Sorted Graphs](Images/mpi_bucket_reverse.png)\
+Reverse sorting follows a very similar trend to sorted data. Since everything is sorted into buckets and then combined, this type of symmetry is to be somewhat expected.\
+![1% Perturbed Graphs](Images/mpi_bucket_percent.png)\
+Adding 1% randomness does not change the overall performance that much from the fully sorted implementation. The bucket sizes are still very close to evenly distributed.\
 
-CUDA Comparisons:
-![Random Graphs](Images/cuda_bucket_random.png)
-CUDA exhibits exceptionally poor performance. This is random input. The comp_small region represents sorting the data into buckets, where the number of buckets is equal to the number of threads. This has a moderate parallelization, and is hindered by the necessity of using atomics to increment the counts of the numbers in each bucket. The comp_large region represents the region of sorting all the buckets. I tried bitonic as well as thrust::sort, and both of them had qualitiatively similar results. The challenge is that although the sorting of one bucket is parallellized, each bucket must be sorted. So more threads means more buckets means more sorting, which is why comp_large increases with threads.
-![Sorted Graphs](Images/cuda_bucket_sorted.png)
-With sorted input, we see less parallelization in the sorting data into buckets region. This is because the data is sorted so each thread in a block will be adding to the same bucket, resulting in longer waiting times for the atomic incrementing of the counts of the numbers in each bucket.
-![Reverse Sorted Graphs](Images/cuda_bucket_reverse.png)
-Reverse sorted input shows a similar trend to sorted input, again as bucket sort is fairly symmetric.
-![1% Perturbed Graphs](Images/cuda_bucket_percent.png)
-Perturbing the data by 1% does not significantly change performance, but does make it fluctuate a little.
+## CUDA Comparisons:
+
+![Random Graphs](Images/cuda_bucket_random.png)\
+CUDA exhibits exceptionally poor performance. This is random input. The comp_small region represents sorting the data into buckets, where the number of buckets is equal to the number of threads. This has a moderate parallelization, and is hindered by the necessity of using atomics to increment the counts of the numbers in each bucket. The comp_large region represents the region of sorting all the buckets. I tried bitonic as well as thrust::sort, and both of them had qualitiatively similar results. The challenge is that although the sorting of one bucket is parallellized, each bucket must be sorted. So more threads means more buckets means more sorting, which is why comp_large increases with threads.\
+![Sorted Graphs](Images/cuda_bucket_sorted.png)\
+With sorted input, we see less parallelization in the sorting data into buckets region. This is because the data is sorted so each thread in a block will be adding to the same bucket, resulting in longer waiting times for the atomic incrementing of the counts of the numbers in each bucket.\
+![Reverse Sorted Graphs](Images/cuda_bucket_reverse.png)\
+Reverse sorted input shows a similar trend to sorted input, again as bucket sort is fairly symmetric.\
+![1% Perturbed Graphs](Images/cuda_bucket_percent.png)\
+Perturbing the data by 1% does not significantly change performance, but does make it fluctuate a little.\
 
 ### Bubble Sort:
-MPI Comparison between Input Types:
-Strong Scaling:
-![Computation Graphs](Images/comp_bubble_strong.PNG)
-Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
-From the 4 graphs, we can see that the random input type and 1% input type had the best strong scaling for the computation time. This is because of the fact that the bubble sort parallel implementation had to use an odd even transposition to make it parallelized. Odd even transposition works for higher input sizes which you can see that the time decreases as the input size increases. Additionally, due to the nature of odd even transposition, having a random input and 1% perturbed input is more efficient than a sorted or reverse sorted input.
+## MPI Comparison between Input Types:
+# Strong Scaling:
+![Computation Graphs](Images/comp_bubble_strong.PNG)\
+Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed\
+From the 4 graphs, we can see that the random input type and 1% input type had the best strong scaling for the computation time. This is because of the fact that the bubble sort parallel implementation had to use an odd even transposition to make it parallelized. Odd even transposition works for higher input sizes which you can see that the time decreases as the input size increases. Additionally, due to the nature of odd even transposition, having a random input and 1% perturbed input is more efficient than a sorted or reverse sorted input.\
+# Weak Scaling:
+![Main Graphs](Images/main_bubble_weak.PNG)\
+Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed\
+From the 4 graphs, we can see that the main implementation of bubble sort scales weakly throughout all 4 input types. This is due to the fact that bubble sort itself is an extremely inefficient algorithm even with the help of an odd even transposition. This can also imply that the communication time was inefficient as well. Although the bubble sort implementation for MPI was parallelized, it was not parallelized well hence the weak scaling.\
+# Speedup:
+![Speedup Graphs](Images/speedup_bubble.PNG)\
+Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed\
+As seen from the 4 graphs, the speedup for each of the input type was not good, but out of the 4 data input types, the best speedup was the random input type. This is attributed to the fact that the odd even transposition works best with a random data than sorted or reverse sorted. However, since the implementation is still a bubble sort algorithm, the efficiency of the sorting gets worse if the data size is small.\
 
-Weak Scaling:
-![Main Graphs](Images/main_bubble_weak.PNG)
-Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
-From the 4 graphs, we can see that the main implementation of bubble sort scales weakly throughout all 4 input types. This is due to the fact that bubble sort itself is an extremely inefficient algorithm even with the help of an odd even transposition. This can also imply that the communication time was inefficient as well. Although the bubble sort implementation for MPI was parallelized, it was not parallelized well hence the weak scaling.
+Based on the analysis, the random input data performed the best which was expected given the behavior of odd even transposition, but due to the inherent inefficiency of bubble sort, it did not matter what kind of data type was used or what the data size was, leading it to still be pretty inefficient.\
 
-Speedup:
-![Speedup Graphs](Images/speedup_bubble.PNG)
-Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
-As seen from the 4 graphs, the speedup for each of the input type was not good, but out of the 4 data input types, the best speedup was the random input type. This is attributed to the fact that the odd even transposition works best with a random data than sorted or reverse sorted. However, since the implementation is still a bubble sort algorithm, the efficiency of the sorting gets worse if the data size is small.
-
-Based on the analysis, the random input data performed the best which was expected given the behavior of odd even transposition, but due to the inherent inefficiency of bubble sort, it did not matter what kind of data type was used or what the data size was, leading it to still be pretty inefficient.
-
-CUDA Comparison between Input Types:
-Strong Scaling:
-![Communication Graphs](Images/comm_bubble_cuda_Strong.PNG)
+## CUDA Comparison between Input Types:
+# Strong Scaling:
+![Communication Graphs](Images/comm_bubble_cuda_Strong.PNG)\
 Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
 The CUDA implementation was not done well and in turn, it was parallelized very very inefficiently with extremely poor performance. As we can see from the 4 graphs, there is almost no strong scaling visible in the communication time for any of the data input types. I tried using the odd even transposition for the CUDA implementation as well and it was not parallelized well hence the extremely flat lines.
 
-Weak Scaling:
-![Main Graphs](Images/main_bubble_weak.PNG)
+# Weak Scaling:
+![Main Graphs](Images/main_bubble_weak.PNG)\
 Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
 As stated above, since the CUDA implementation was not parallelized well, there is a very weak scaling, but is almost not noticeable. There is almost no difference between the 4 data input types since they all perform poorly.
 
-Speedup:
-![Speedup Graphs](Images/bubble_cuda_speedup.PNG)
+# Speedup:
+![Speedup Graphs](Images/bubble_cuda_speedup.PNG)\
 Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
 Since the CUDA implementation was not parallelized well, the speedups between the 4 graphs are all over the place. The one that did the best between the 4 input data types would be sorted and reverse sorted surprisingly given that odd even transposition performs poorly when the data is already sorted or reverse sorted.
 
