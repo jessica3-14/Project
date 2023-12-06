@@ -570,6 +570,22 @@ Another inference is that larger data sizes demonstrate a better correlation for
 ![CUDA Percent Weak Scaling Graphs](Images/cuda_sample_percent_weak.png)
 ##### Analysis
 
+## 4c Performance Metrics
+- `Time`
+    - Min time/rank
+    - Max time/rank
+    - Avg time/rank
+    - Total time
+    - Variance time/rank
+    - `If GPU`:
+        - Avg GPU time/rank
+        - Min GPU time/rank
+        - Max GPU time/rank
+        - Total GPU time
+
+The above performance metrics can be found in each of our own jupyter notebooks. Below is an example of the performance matrics for CUDA:\
+![Performance Metric](Images/performance_metrics.png)
+
 
 ## 5. Team communication
 Our team will mainly be using discord as our means of communication due to the fact that it is easy to use and if we ever need to voice call or meet up remotely, we do not have to set up a zoom meeting.
