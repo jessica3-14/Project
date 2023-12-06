@@ -432,18 +432,51 @@ Perturbing the data by 1% does not significantly change performance, but does ma
 
 ---
 
+### QuickSort:
+#### MPI Comparison between Input Types:
+##### Strong Scaling:
+![MPI Quicksort Strong Scaling Graphs](Images/mpi_quick_strong.png)\
+From the graphs above we can see that the mpi implementation of quicksort did an awful job at
+parallelizing. For some of the array sizes it had a constant time meaning it didnt parallelize while
+for others it increased in time with the number of threads however we would have expected it to
+be decreasing. Quicksort is a sequential algorithm that we tried to parallelize but upon seeing
+the results we either should do a much better job or just not parallelize it at all. Overall, it seems
+like the mode affected the performance pretty low, but it seems like it performed the best/most
+consistently with random setting.
+##### Weak Scaling:
+![MPI Quicksort Weak Scaling Graphs](Images/mpi_quick_weak.png)\
+As for weak scaling, again we see the opposite trend of what we would have expected, meaning
+the performance of the algorithm is just bad in general. There isn’t much difference between the
+performance in terms of modes, so I don't think the mode made much difference in it.
+
+#### CUDA Comparison between Input Types:
+##### Strong Scaling:
+![CUDA Quicksort Strong Scaling Graphs](Images/cuda_quick_strong.png)\
+Overall, by looking at the strong scaling graphs it seems as though the program did not really
+parallelize. We would have expected the time to decrease as the number of threads increased,
+which would make sense, unfortunately that wasn’t the case for our program. Upon comparing
+all 4 modes, it seems like mode 3 was the most consistent across all modes, leaving mode 1(top
+right) to be the most varying.
+##### Weak Scaling:
+![CUDA Quicksort Weak Scaling Graphs](Images/cuda_quick_weak.png)\
+Again, as we saw in MPI implementation, weak scaling is just bad overall. We expected it to
+have a positive linear relationship but we mostly see a negative relationship between them or no
+relationship at all, my guess is best mode is 1(top right).
+
+---
+
 ### Bubble Sort:
 #### MPI Comparison between Input Types:
 ##### Strong Scaling:
-![Computation Graphs](Images/comp_bubble_strong.PNG)\
+![Computation MPI Graphs](Images/comp_bubble_strong.PNG)\
 Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed\
 From the 4 graphs, we can see that the random input type and 1% input type had the best strong scaling for the computation time. This is because of the fact that the bubble sort parallel implementation had to use an odd even transposition to make it parallelized. Odd even transposition works for higher input sizes which you can see that the time decreases as the input size increases. Additionally, due to the nature of odd even transposition, having a random input and 1% perturbed input is more efficient than a sorted or reverse sorted input.
 ##### Weak Scaling:
-![Main Graphs](Images/main_bubble_weak.PNG)\
+![Main MPI Graphs](Images/main_bubble_weak.PNG)\
 Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed\
 From the 4 graphs, we can see that the main implementation of bubble sort scales weakly throughout all 4 input types. This is due to the fact that bubble sort itself is an extremely inefficient algorithm even with the help of an odd even transposition. This can also imply that the communication time was inefficient as well. Although the bubble sort implementation for MPI was parallelized, it was not parallelized well hence the weak scaling.
 ##### Speedup:
-![Speedup Graphs](Images/speedup_bubble.PNG)\
+![MPI Speedup Graphs](Images/speedup_bubble.PNG)\
 Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed\
 As seen from the 4 graphs, the speedup for each of the input type was not good, but out of the 4 data input types, the best speedup was the random input type. This is attributed to the fact that the odd even transposition works best with a random data than sorted or reverse sorted. However, since the implementation is still a bubble sort algorithm, the efficiency of the sorting gets worse if the data size is small.
 
@@ -451,19 +484,19 @@ Based on the analysis, the random input data performed the best which was expect
 
 #### CUDA Comparison between Input Types:
 ##### Strong Scaling:
-![Communication Graphs](Images/comm_bubble_cuda_Strong.PNG)\
+![Communication CUDA Graphs](Images/comm_bubble_cuda_Strong.PNG)\
 Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
 The CUDA implementation was not done well and in turn, it was parallelized very very inefficiently with extremely poor performance. As we can see from the 4 graphs, there is almost no strong scaling visible in the communication time for any of the data input types. I tried using the odd even transposition for the CUDA implementation as well and it was not parallelized well hence the extremely flat lines.
 
 ##### Weak Scaling:
-![Main Graphs](Images/main_bubble_weak.PNG)\
+![Main CUDA Graphs](Images/main_bubble_weak.PNG)\
 Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
 As stated above, since the CUDA implementation was not parallelized well, there is a very weak scaling, but is almost not noticeable. There is almost no difference between the 4 data input types since they all perform poorly.
 
 ##### Speedup:
-![Speedup Graphs](Images/bubble_cuda_speedup.PNG)\
+![CUDA Speedup Graphs](Images/bubble_cuda_speedup.PNG)\
 Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
-Since the CUDA implementation was not parallelized well, the speedups between the 4 graphs are all over the place. The one that did the best between the 4 input data types would be sorted and reverse sorted surprisingly given that odd even transposition performs poorly when the data is already sorted or reverse sorted.\
+Since the CUDA implementation was not parallelized well, the speedups between the 4 graphs are all over the place. The one that did the best between the 4 input data types would be sorted and reverse sorted surprisingly given that odd even transposition performs poorly when the data is already sorted or reverse sorted.
 
 Based on the analysis, the CUDA implementation performed poorly throughout all the data input types. This is due to the fact that the CUDA implementation for bubble sort may not have been implemented correctly and/or implemented well and since bubble sort itself is inherently an inefficient algorithm, the performance would be poor no matter what the data type is.
 
@@ -471,24 +504,27 @@ Based on the analysis, the CUDA implementation performed poorly throughout all t
 
 ### Sample Sort:
 #### MPI Comparison:
-##### Random Input Data Type
-![Random Strong Scaling Graphs](Images/mpi_sample_random_strong.png)
-![Random Weak Scaling Graphs](Images/mpi_sample_random_weak.png)
+##### Random Input Data Type:
+![Random Strong Scaling Graphs](Images/mpi_sample_random_strong.png)\
+![Random Weak Scaling Graphs](Images/mpi_sample_random_weak.png)\
 ![Random Speedup Graphs](Images/mpi_sample_random_speedup.png)
-##### Sorted Input Data Type
-![Sorted Strong Scaling Graphs](Images/mpi_sample_sorted_strong.png)
-![Sorted Weak Scaling Graphs](Images/mpi_sample_sorted_weak.png)
+##### Sorted Input Data Type:
+![Sorted Strong Scaling Graphs](Images/mpi_sample_sorted_strong.png)\
+![Sorted Weak Scaling Graphs](Images/mpi_sample_sorted_weak.png)\
 ![Sorted Speedup Graphs](Images/mpi_sample_sorted_speedup.png)
-##### Reverse Sorted Input Data Type
-![Reverse Strong Scaling Graphs](Images/mpi_sample_reverse_strong.png)
-![Reverse Weak Scaling Graphs](Images/mpi_sample_reverse_weak.png)
+##### Reverse Sorted Input Data Type:
+![Reverse Strong Scaling Graphs](Images/mpi_sample_reverse_strong.png)\
+![Reverse Weak Scaling Graphs](Images/mpi_sample_reverse_weak.png)\
 ![Reverse Speedup Graphs](Images/mpi_sample_reverse_speedup.png)
-##### 1% Perturbed Input Data Type
-![Percent Strong Scaling Graphs](Images/mpi_sample_percent_strong.png)
-![Percent Weak Scaling Graphs](Images/mpi_sample_percent_weak.png)
-![Percent Speedup Graphs](Images/mpi_sample_percent_speedup.png)\
+##### 1% Perturbed Input Data Type:
+![Percent Strong Scaling Graphs](Images/mpi_sample_percent_strong.png)\
+![Percent Weak Scaling Graphs](Images/mpi_sample_percent_weak.png)\
+![Percent Speedup Graphs](Images/mpi_sample_percent_speedup.png)
+##### Analysis
 From all of these different graphs, one inference that can be made from the graph correlations is that additional number of processors decreases the computational time, but also increases the communication time. This makes sense, because the way parallel sample sort works, there is a lot of communication between processors to share splitters, and the processors also must communicate which bucket they will be sorting in which order. Likely, since there is also a lot of synchronization in the mpi sample sort, processors may end up having to wait for each other to finish. The decrease in computational time also makes sense, since the work is divided between processors. Each process takes a partition of the array to be sorted, locally sorts and eventually create global splitters. The processors then again take a specific bucket to be sorted and locally sorts their respective buckets, and then combines the buckets to finish the sort. More processors means more elements split into buckets for local sorting, which is why the computational time decreases as we increase processors.\
 Another inference is that larger data sizes demonstrate a better correlation for the speedup of sample sort. This is likely due to the fact that for small input sizes, the work it takes to sort the array is so minimal that it isn’t worth to add more processors since it would also increase the communication times between them. Furthermore, there is no significant difference between the times it take to sample sort for the different input types of sorted, random, reverse sorted, and one percent perturbed. This is likely due to the nature of sample sort, since it utilizes quick sort for local process sorting, the input type does not influence quick sort speed.
+
+#### CUDA Comparison:
 
 ## 5. Team communication
 Our team will mainly be using discord as our means of communication due to the fact that it is easy to use and if we ever need to voice call or meet up remotely, we do not have to set up a zoom meeting.
