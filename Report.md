@@ -569,6 +569,7 @@ Another inference is that larger data sizes demonstrate a better correlation for
 ![CUDA Percent Strong Scaling Graphs](Images/cuda_sample_percent_strong.png)\
 ![CUDA Percent Weak Scaling Graphs](Images/cuda_sample_percent_weak.png)
 ##### Analysis
+From the different graphs, there are no noticeable differences in sorting performance with different input types. Furthermore, the strong scaling graphs demonstrate that there is good parallelization for smaller input sizes, but struggles with larger input sizes. I don’t really know why this is the case, but it looks like to me that maybe there weren’t enough resources to allocate between threads for the larger input sizes. The weak scaling shows there is good parallelization for only the smallest input size. I think I should have tested even more smaller input sizes to make sure that this isn’t just an outlier but that my code actually parallizes for smaller input sizes.
 
 ## 4c Performance Metrics
 - `Time`
