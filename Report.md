@@ -399,6 +399,37 @@ Launch date of the job, libraries used, command line used to launch the job, nam
 ---
 
 ## 4. Performance evaluation
+## 4a. Varying Parameters
+For our parameters, each implementation had varying degrees of success with running them. In the end, we decided to use 2^20 input size to compare our algorithms to each other. Here are our parameters for each algorithm:
+##### Bucket Sort:
+###### MPI:
+Number of Processes: 2, 4, 8, 16, 32, 64, 128, 256, 512\
+Data Size: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
+###### CUDA:
+Number of Threads: 64, 128, 256, 512, 1024\
+Data Size: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
+##### Quicksort:
+###### MPI:
+Number of Processes: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024\
+Data Size: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
+###### CUDA:
+Number of Threads: 64, 128, 256, 512, 1024\
+Data Size: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
+##### Bubble Sort:
+###### MPI:
+Number of Processes: 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024\
+Data Size: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26
+###### CUDA:
+Number of Threads: 64, 128, 256, 512, 1024\
+Data Size: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26
+##### Sample Sort:
+###### MPI:
+Number of Processes: 2, 4, 8, 16, 32, 64\
+Data Size: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
+###### CUDA:
+Number of Threads: 64, 128, 256, 512, 1024\
+Data Size: 2^16, 2^18, 2^20, 2^22, 2^24, 2^26, 2^28
+##4b
 ### MPI Comparison between Algorithms:
 ![MPI Comparison Graph](Images/Mpi%20comp.png)\
 For MPI, bucket sort is clearly the best implementation, even though communication time starts to become a limiting factor as the number of threads increases. This plot was done at 1048576 because that was the size that worked best across implementations. Sample sort was very inefficient and bubble sort was near constant.
