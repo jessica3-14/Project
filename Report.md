@@ -587,6 +587,3 @@ From the different graphs, there are no noticeable differences in sorting perfor
 The above performance metrics can be found in each of our own jupyter notebooks. Below is an example of the performance matrics for CUDA:\
 ![Performance Metric](Images/performance_metrics.png)
 
-
-## 5. Team communication
-Our team will mainly be using discord as our means of communication due to the fact that it is easy to use and if we ever need to voice call or meet up remotely, we do not have to set up a zoom meeting.
