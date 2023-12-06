@@ -463,10 +463,32 @@ As stated above, since the CUDA implementation was not parallelized well, there 
 ##### Speedup:
 ![Speedup Graphs](Images/bubble_cuda_speedup.PNG)\
 Top left: Random  Top Right: Sorted  Bottom Left: Reverse Sorted  Bottom Right: 1% Perturbed
-Since the CUDA implementation was not parallelized well, the speedups between the 4 graphs are all over the place. The one that did the best between the 4 input data types would be sorted and reverse sorted surprisingly given that odd even transposition performs poorly when the data is already sorted or reverse sorted.
+Since the CUDA implementation was not parallelized well, the speedups between the 4 graphs are all over the place. The one that did the best between the 4 input data types would be sorted and reverse sorted surprisingly given that odd even transposition performs poorly when the data is already sorted or reverse sorted.\
+
+Based on the analysis, the CUDA implementation performed poorly throughout all the data input types. This is due to the fact that the CUDA implementation for bubble sort may not have been implemented correctly and/or implemented well and since bubble sort itself is inherently an inefficient algorithm, the performance would be poor no matter what the data type is.
 
 ---
 
+### Sample Sort:
+#### MPI Comparison:
+##### Random Input Data Type
+![Random Strong Scaling Graphs](Images/mpi_sample_random_strong.png)
+![Random Weak Scaling Graphs](Images/mpi_sample_random_weak.png)
+![Random Speedup Graphs](Images/mpi_sample_random_speedup.png)
+##### Sorted Input Data Type
+![Sorted Strong Scaling Graphs](Images/mpi_sample_sorted_strong.png)
+![Sorted Weak Scaling Graphs](Images/mpi_sample_sorted_weak.png)
+![Sorted Speedup Graphs](Images/mpi_sample_sorted_speedup.png)
+##### Reverse Sorted Input Data Type
+![Reverse Strong Scaling Graphs](Images/mpi_sample_reverse_strong.png)
+![Reverse Weak Scaling Graphs](Images/mpi_sample_reverse_weak.png)
+![Reverse Speedup Graphs](Images/mpi_sample_reverse_speedup.png)
+##### 1% Perturbed Input Data Type
+![Percent Strong Scaling Graphs](Images/mpi_sample_percent_strong.png)
+![Percent Weak Scaling Graphs](Images/mpi_sample_percent_weak.png)
+![Percent Speedup Graphs](Images/mpi_sample_percent_speedup.png)\
+From all of these different graphs, one inference that can be made from the graph correlations is that additional number of processors decreases the computational time, but also increases the communication time. This makes sense, because the way parallel sample sort works, there is a lot of communication between processors to share splitters, and the processors also must communicate which bucket they will be sorting in which order. Likely, since there is also a lot of synchronization in the mpi sample sort, processors may end up having to wait for each other to finish. The decrease in computational time also makes sense, since the work is divided between processors. Each process takes a partition of the array to be sorted, locally sorts and eventually create global splitters. The processors then again take a specific bucket to be sorted and locally sorts their respective buckets, and then combines the buckets to finish the sort. More processors means more elements split into buckets for local sorting, which is why the computational time decreases as we increase processors.\
+Another inference is that larger data sizes demonstrate a better correlation for the speedup of sample sort. This is likely due to the fact that for small input sizes, the work it takes to sort the array is so minimal that it isn’t worth to add more processors since it would also increase the communication times between them. Furthermore, there is no significant difference between the times it take to sample sort for the different input types of sorted, random, reverse sorted, and one percent perturbed. This is likely due to the nature of sample sort, since it utilizes quick sort for local process sorting, the input type does not influence quick sort speed.
 
 ## 5. Team communication
 Our team will mainly be using discord as our means of communication due to the fact that it is easy to use and if we ever need to voice call or meet up remotely, we do not have to set up a zoom meeting.
