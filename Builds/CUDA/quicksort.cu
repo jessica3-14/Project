@@ -11,6 +11,10 @@ int BLOCKS;
 int NUM_VALS;
 
 __device__ int d_NUM_VALS;
+const char* comp = "comp";
+const char* comm = "comm";
+const char* comm_large = "comm_large";
+const char* comp_small = "comp_small";
 //const char* bitonic_sort_step_region = "bitonic_sort_step";
 //const char* cudaMemcpy_host_to_device = "cudaMemcpy_host_to_device";
 //const char* cudaMemcpy_device_to_host = "cudaMemcpy_device_to_host";
@@ -34,13 +38,14 @@ int verify(float *values){
   }
   return 1;
 }
-__global__ void quick_sort_step(float* dev_values, int l, int h) {
+__global__ int quick_sort_step(float* dev_values, int l, int h) {
+  float piv = dev_values[(h+l)/2];
   unsigned int i = threadIdx.x + blockDim.x * blockIdx.x;
   
-  if (i >= l && i <= h) {
-    float piv = dev_values[l];
-    int left = l;
-    int right = h;
+  int left = l;
+  int right = h;
+  
+  
     
     while (left <= right) {
       while (left <= h && dev_values[left] <= piv) {
@@ -59,7 +64,7 @@ __global__ void quick_sort_step(float* dev_values, int l, int h) {
         right--;
       }
     }
-  }
+  return left;
 }
 
 /**
@@ -68,35 +73,53 @@ __global__ void quick_sort_step(float* dev_values, int l, int h) {
 void quick_sort(float* values, int low, int high) {
   float* dev_values;
   size_t size = (high - low + 1) * sizeof(float);
+  
+  //CALI_MARK_BEGIN(comm);
 
   cudaMalloc((void**)&dev_values, size);
   
   // MEM COPY FROM HOST TO DEVICE
-  //CALI_MARK_BEGIN(cudaMemcpy_host_to_device);
+  //CALI_MARK_BEGIN(comm_large);
   cudaMemcpy(dev_values, values, size, cudaMemcpyHostToDevice);
-  //CALI_MARK_END(cudaMemcpy_host_to_device);
+  //CALI_MARK_END(comm_large);
+  
   cudaMemcpyToSymbol(d_NUM_VALS, &NUM_VALS, sizeof(int));
+  
+  //CALI_MARK_END(comm);
 
   dim3 blocks(BLOCKS, 1);    /* Number of blocks   */
   dim3 threads(THREADS, 1);  /* Number of threads  */
 
   // Major step
-  CALI_MARK_BEGIN("comp_large");
+  //CALI_MARK_BEGIN(comp);
+  //CALI_MARK_BEGIN(comp_small);
+  
   quick_sort_step<<<blocks, threads>>>(dev_values, 0, size - 1);
-  cudaDeviceSynchronize();
-  CALI_MARK_END("comp_large");
+  
+  //cudaDeviceSynchronize();
+  
+  //CALI_MARK_END(comp_small);
+  //CALI_MARK_END(comp);
 
   // MEM COPY FROM DEVICE TO HOST
-  //CALI_MARK_BEGIN(cudaMemcpy_device_to_host);
+  //CALI_MARK_BEGIN("comm");
+  //CALI_MARK_BEGIN("comm_large");
   cudaMemcpy(values, dev_values, size, cudaMemcpyDeviceToHost);
-  //CALI_MARK_END(cudaMemcpy_device_to_host);
+  //CALI_MARK_END("comm_large");
+  //CALI_MARK_END("comm");
+  
   cudaFree(dev_values);
 }
 
 int main(int argc, char* argv[]) {
+  CALI_MARK_BEGIN("main");
   THREADS = atoi(argv[1]);
   NUM_VALS = atoi(argv[2]);
+  int mode = atoi(argv[3]);
   BLOCKS = NUM_VALS / THREADS;
+  
+  size_t size = NUM_VALS * sizeof(float);
+
 
   printf("Number of threads: %d\n", THREADS);
   printf("Number of values: %d\n", NUM_VALS);
@@ -104,18 +127,63 @@ int main(int argc, char* argv[]) {
 
   cali::ConfigManager mgr;
   mgr.start();
-  CALI_MARK_BEGIN("comp");
+  
   clock_t start, stop;
+  
   CALI_MARK_BEGIN("data_init");
+  double *tvals = (double *)malloc(NUM_VALS * sizeof(double));
+  genData(NUM_VALS, mode, tvals, THREADS);
   float *values = (float*)malloc(NUM_VALS * sizeof(float));
-  array_fill(values, NUM_VALS);
+  //array_fill(values, NUM_VALS);
+  for (int i = 0; i < NUM_VALS;i++){
+    values[i] = (float)tvals[i];
+  }
   CALI_MARK_END("data_init");
+  free(tvals);
+  
+    float *dev_values;
+    cudaMalloc((void**) &dev_values, size);
+
+    CALI_MARK_BEGIN("comm");
+    CALI_MARK_BEGIN("comm_large");
+    //CALI_MARK_BEGIN("cudaMemcpy");
+    cudaMemcpy(dev_values, values, size, cudaMemcpyHostToDevice);
+    //CALI_MARK_END("cudaMemcpy");
+    CALI_MARK_END("comm_large");
+    CALI_MARK_END("comm");
+    
+    CALI_MARK_BEGIN("comp");
+    CALI_MARK_BEGIN("comp_large");
+    /*
+    for (int i = 0; i < NUM_VALS; i++) {
+        quicksort<<<BLOCKS, THREADS>>>(dev_values, NUM_VALS);
+    }
+    */
+    quick_sort(values, 0, NUM_VALS - 1);
+    cudaDeviceSynchronize();
+    CALI_MARK_END("comp_large");
+    CALI_MARK_END("comp");
+
+    CALI_MARK_BEGIN("comm");
+    CALI_MARK_BEGIN("comm_large");
+    CALI_MARK_BEGIN("cudaMemcpy");
+    cudaMemcpy(values, dev_values, size, cudaMemcpyDeviceToHost);
+    CALI_MARK_END("cudaMemcpy");
+    CALI_MARK_END("comm_large");
+    CALI_MARK_END("comm");
+  
+  
+  /*
+  CALI_MARK_BEGIN("comp");
+  CALI_MARK_BEGIN("large_comp");
   start = clock();
   quick_sort(values, 0, NUM_VALS - 1);
   stop = clock();
-  CALI_MARK_END("comp");    
-
- CALI_MARK_BEGIN("correctness_check");
+  CALI_MARK_END("large_comp");
+  CALI_MARK_END("comp");
+  */
+  
+  CALI_MARK_BEGIN("correctness_check");
   if(verify(values)){
     printf("sort successful\n");
   }
@@ -125,24 +193,24 @@ int main(int argc, char* argv[]) {
   CALI_MARK_END("correctness_check");
 
   free(values);
+  CALI_MARK_END("main");
+  
+  adiak::init(NULL);
+  adiak::launchdate();
+  adiak::libraries();
+  adiak::cmdline();
+  adiak::clustername();
+  adiak::value("Algorithm", "Quicksort");
+  adiak::value("ProgrammingModel", "CUDA");
+  adiak::value("Datatype", "float");
+  adiak::value("SizeOfDatatype", 8);
+  adiak::value("InputSize", NUM_VALS);
+  adiak::value("InputType", mode);
+  adiak::value("num_threads", THREADS);
+  adiak::value("group_num", 12);
+  adiak::value("implementation_source", "https://www.geeksforgeeks.org/quick-sort/");
 
-adiak::init(NULL);
-adiak::launchdate();    // launch date of the job
-adiak::libraries();     // Libraries used
-adiak::cmdline();       // Command line used to launch the job
-adiak::clustername();   // Name of the cluster
-adiak::value("Algorithm", "quick"); // The name of the algorithm you are using (e.g., "MergeSort", "BitonicSort")
-adiak::value("ProgrammingModel", "CUDA"); // e.g., "MPI", "CUDA", "MPIwithCUDA"
-adiak::value("Datatype", "double"); // The datatype of input elements (e.g., double, int, float)
-adiak::value("SizeOfDatatype", sizeof(double)); // sizeof(datatype) of input elements in bytes (e.g., 1, 2, 4)
-adiak::value("InputSize", NUM_VALS); // The number of elements in input dataset (1000)
-adiak::value("InputType",0); // For sorting, this would be "Sorted", "ReverseSorted", "Random", "1%perturbed"
-adiak::value("num_procs", THREADS); // The number of processors (MPI ranks)
-adiak::value("group_num", 12); // The number of your group (integer, e.g., 1, 10)
-
-adiak::value("implementation_source", "AI"); // Where you got the source code of your algorithm; choices: ("Online", "AI", "Handwritten").
-
-
+ 
   mgr.stop();
   mgr.flush();
 }
